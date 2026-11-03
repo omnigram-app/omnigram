@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/controls/history_view_compose_controls.h"
 
 #include "history/view/controls/history_view_bot_menu_button.h"
+#include "omnigram/omnigram_settings.h"
 
 #include "base/call_delayed.h"
 #include "base/event_filter.h"
@@ -5731,6 +5732,25 @@ void ComposeControls::updateAttachBotsMenu() {
 }
 
 void ComposeControls::paintBackground(QPainter &p, QRect full, QRect clip) {
+	if (Omnigram::UseMacOSInputBar()) {
+		auto hq = PainterHighQualityEnabler(p);
+		p.setBrush(_st.bg);
+		p.setPen(Qt::NoPen);
+		constexpr auto r = 20; // 20pt Liquid Glass capsule radius
+		if (_commentsShown && !_commentsShown->isHidden()) {
+			p.drawRoundedRect(_commentsShown->geometry(), r, r);
+			full.setLeft(full.left()
+				+ _commentsShown->width()
+				+ _st.commentsSkip);
+		}
+		if (_starsReaction) {
+			full.setWidth(full.width()
+				- _starsReaction->width()
+				- _st.starsSkip);
+		}
+		p.drawRoundedRect(full, r, r);
+		return;
+	}
 	if (_backgroundRect) {
 		auto hq = PainterHighQualityEnabler(p);
 		p.setBrush(_st.bg);

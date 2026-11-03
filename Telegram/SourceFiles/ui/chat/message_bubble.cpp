@@ -13,6 +13,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/chat/torn_edge.h"
 #include "styles/style_chat.h"
 #include "styles/style_chat_style.h"
+#include "omnigram/omnigram_settings.h"
+#include "omnigram/omnigram_bubble_geometry.h"
 
 namespace Ui {
 namespace {
@@ -268,7 +270,46 @@ void PaintPatternBubble(QPainter &p, const SimpleBubble &args) {
 	p.setOpacity(wasOpacity);
 }
 
+void PaintMacOSSolidBubble(QPainter &p, const SimpleBubble &args) {
+	const auto &st = args.st->messageStyle(args.outbg, args.selected);
+	const auto &bg = st.msgBg;
+
+	const auto toRadius = [](Corner c) -> float64 {
+		switch (c) {
+		case Corner::Large: return Omnigram::kMacOSBubbleMainRadius;
+		case Corner::Small: return Omnigram::kMacOSBubbleAuxRadius;
+		case Corner::Tail: return Omnigram::kMacOSBubbleMainRadius;
+		case Corner::None: return 0.0;
+		}
+		return 0.0;
+	};
+
+	Omnigram::BubbleRadii radii;
+	radii.topLeft = toRadius(args.rounding.topLeft);
+	radii.topRight = toRadius(args.rounding.topRight);
+	radii.bottomLeft = toRadius(args.rounding.bottomLeft);
+	radii.bottomRight = toRadius(args.rounding.bottomRight);
+	radii.hasTail = (args.rounding.bottomLeft == Corner::Tail)
+		|| (args.rounding.bottomRight == Corner::Tail);
+
+	const auto path = Omnigram::GenerateBubblePath(
+		args.geometry,
+		radii,
+		!args.outbg,
+		Omnigram::kMacOSBubbleTailWidth);
+
+	const auto wasAntialiasing = p.renderHints().testFlag(QPainter::Antialiasing);
+	p.setRenderHint(QPainter::Antialiasing, true);
+	p.fillPath(path, bg);
+	p.setRenderHint(QPainter::Antialiasing, wasAntialiasing);
+}
+
 void PaintSolidBubble(QPainter &p, const SimpleBubble &args) {
+	if (Omnigram::UseMacOSBubbles()) {
+		PaintMacOSSolidBubble(p, args);
+		return;
+	}
+
 	const auto &st = args.st->messageStyle(args.outbg, args.selected);
 	const auto &bg = st.msgBg;
 	const auto sh = (args.rounding.bottomRight == Corner::None)

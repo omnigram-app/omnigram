@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "dialogs/dialogs_row.h"
 
+#include "omnigram/omnigram_settings.h"
 #include "ui/chat/chat_theme.h" // CountAverageColor.
 #include "ui/color_contrast.h"
 #include "ui/effects/credits_graphics.h"
@@ -422,6 +423,10 @@ const style::DialogRow &Row::ComputeSt(
 }
 
 void Row::recountHeight(float64 narrowRatio, FilterId filterId) {
+	if (Omnigram::UseMacOSChatList()) {
+		_height = 70; // exact 70pt macOS row height
+		return;
+	}
 	const auto &st = ComputeSt(_id.entry(), filterId);
 	_height = ((&st == &st::defaultDialogRow) || !_id.history())
 		? st::defaultDialogRow.height

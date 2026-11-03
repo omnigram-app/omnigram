@@ -120,6 +120,15 @@ nice_target_sources(Telegram ${src_loc}
 PRIVATE
     ${style_files}
 
+    omnigram/omnigram_settings.cpp
+    omnigram/omnigram_settings.h
+    omnigram/omnigram_settings_section.cpp
+    omnigram/omnigram_settings_section.h
+    omnigram/omnigram_spring_animation.cpp
+    omnigram/omnigram_spring_animation.h
+    omnigram/omnigram_bubble_geometry.cpp
+    omnigram/omnigram_bubble_geometry.h
+
     api/api_attached_stickers.cpp
     api/api_attached_stickers.h
     api/api_authorizations.cpp

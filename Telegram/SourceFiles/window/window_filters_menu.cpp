@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/window_filters_menu.h"
 
+#include "omnigram/omnigram_settings.h"
 #include "menu/menu_mark_as_read.h"
 #include "mainwindow.h"
 #include "window/window_session_controller.h"
@@ -137,7 +138,14 @@ void FiltersMenu::setup() {
 		auto p = QPainter(&_outer);
 		p.setPen(Qt::NoPen);
 		p.setBrush(st::windowFiltersButton.textBg);
-		p.drawRect(clip);
+		if (Omnigram::UseMacOSSidebar()) {
+			// macOS Floating Liquid Glass dock: 28pt rounded concentric frame with NSEdgeInsets(8, 8, 8, 0)
+			p.setRenderHint(QPainter::Antialiasing, true);
+			const auto dockRect = _outer.rect().marginsRemoved(QMargins(8, 8, 0, 8));
+			p.drawRoundedRect(dockRect, 28, 28);
+		} else {
+			p.drawRect(clip);
+		}
 	}, _outer.lifetime());
 
 	_parent->heightValue(

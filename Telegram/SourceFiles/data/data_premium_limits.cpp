@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "main/main_app_config.h"
 #include "main/main_session.h"
+#include "omnigram/omnigram_settings.h"
 
 namespace Data {
 
@@ -37,6 +38,9 @@ int PremiumLimits::gifsPremium() const {
 	return appConfigLimit("saved_gifs_limit_premium", 400);
 }
 int PremiumLimits::gifsCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 1000;
+	}
 	return isPremium()
 		? gifsPremium()
 		: gifsDefault();
@@ -49,6 +53,9 @@ int PremiumLimits::stickersFavedPremium() const {
 	return appConfigLimit("stickers_faved_limit_premium", 10);
 }
 int PremiumLimits::stickersFavedCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 100;
+	}
 	return isPremium()
 		? stickersFavedPremium()
 		: stickersFavedDefault();
@@ -61,6 +68,9 @@ int PremiumLimits::dialogFiltersPremium() const {
 	return appConfigLimit("dialog_filters_limit_premium", 30);
 }
 int PremiumLimits::dialogFiltersCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 100;
+	}
 	return isPremium()
 		? dialogFiltersPremium()
 		: dialogFiltersDefault();
@@ -80,6 +90,9 @@ int PremiumLimits::dialogFiltersChatsPremium() const {
 	return appConfigLimit("dialog_filters_chats_limit_premium", 200);
 }
 int PremiumLimits::dialogFiltersChatsCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 500;
+	}
 	return isPremium()
 		? dialogFiltersChatsPremium()
 		: dialogFiltersChatsDefault();
@@ -99,6 +112,9 @@ int PremiumLimits::dialogsPinnedPremium() const {
 	return appConfigLimit("dialogs_pinned_limit_premium", 10);
 }
 int PremiumLimits::dialogsPinnedCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 100;
+	}
 	return isPremium()
 		? dialogsPinnedPremium()
 		: dialogsPinnedDefault();
@@ -111,12 +127,18 @@ int PremiumLimits::dialogsFolderPinnedPremium() const {
 	return appConfigLimit("dialogs_folder_pinned_limit_premium", 200);
 }
 int PremiumLimits::dialogsFolderPinnedCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 500;
+	}
 	return isPremium()
 		? dialogsFolderPinnedPremium()
 		: dialogsFolderPinnedDefault();
 }
 
 int PremiumLimits::topicsPinnedCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 100;
+	}
 	return appConfigLimit("topics_pinned_limit", 5);
 }
 
@@ -127,6 +149,9 @@ int PremiumLimits::savedSublistsPinnedPremium() const {
 	return appConfigLimit("saved_dialogs_pinned_limit_premium", 100);
 }
 int PremiumLimits::savedSublistsPinnedCurrent() const {
+	if (Omnigram::ClientLimitsRemoved()) {
+		return 200;
+	}
 	return isPremium()
 		? savedSublistsPinnedPremium()
 		: savedSublistsPinnedDefault();

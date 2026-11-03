@@ -25,6 +25,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "main/main_session.h"
 #include "ui/chat/sponsored_message_bar.h"
 #include "ui/text/text_utilities.h" // tr::rich.
+#include "omnigram/omnigram_settings.h"
 
 namespace Data {
 namespace {
@@ -302,6 +303,9 @@ HistoryItem *SponsoredMessages::injectItem(
 }
 
 bool SponsoredMessages::canHaveFor(not_null<History*> history) const {
+	if (Omnigram::NoAdsEnabled()) {
+		return false;
+	}
 	if (history->peer->isChannel()) {
 		return true;
 	} else if (const auto user = history->peer->asUser()) {
@@ -311,11 +315,17 @@ bool SponsoredMessages::canHaveFor(not_null<History*> history) const {
 }
 
 bool SponsoredMessages::canHaveFor(not_null<HistoryItem*> item) const {
+	if (Omnigram::NoAdsEnabled()) {
+		return false;
+	}
 	return item->history()->peer->isBroadcast()
 		&& item->isRegular();
 }
 
 bool SponsoredMessages::isTopBarFor(not_null<History*> history) const {
+	if (Omnigram::NoAdsEnabled()) {
+		return false;
+	}
 	if (peerIsUser(history->peer->id)) {
 		if (const auto user = history->peer->asUser()) {
 			return user->isBot();

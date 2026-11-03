@@ -38,6 +38,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "info/stories/info_stories_widget.h"
 #include "lang/lang_cloud_manager.h"
 #include "lang/lang_instance.h"
+#include "omnigram/omnigram_settings_section.h"
 #include "lang/lang_keys.h"
 #include "lottie/lottie_icon.h"
 #include "menu/menu_checked_action.h"
@@ -397,6 +398,13 @@ void BuildSectionButtons(SectionBuilder &builder) {
 		.targetSection = ChatId(),
 		.icon = { &st::menuIconChatBubble },
 		.keywords = { u"themes"_q, u"appearance"_q, u"stickers"_q },
+	});
+
+	builder.addSectionButton({
+		.title = rpl::single(u"Omnigram (macOS UI)"_q),
+		.targetSection = Omnigram::OmnigramSectionId(),
+		.icon = { &st::menuIconChatBubble },
+		.keywords = { u"omnigram"_q, u"macos"_q, u"design"_q, u"bubbles"_q },
 	});
 
 	{ // Folders

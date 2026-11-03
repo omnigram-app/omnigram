@@ -33,6 +33,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "core/click_handler_types.h"
 #include "core/ui_integration.h"
+#include "omnigram/omnigram_settings.h"
 #include "data/business/data_business_common.h"
 #include "data/business/data_business_info.h"
 #include "data/components/credits.h"
@@ -1778,6 +1779,32 @@ Section DetailsFiller::makeInfo() {
 		fitLabelToButton(qrButton, usernameLine.subtext, rightSkip);
 		qrButton->setClickedCallback(showQr);
 
+		if (Omnigram::ShowPeerIdEnabled()) {
+			const auto bareId = peerToBareMTPInt(user->id).v;
+			const auto photoLoc = user->userpicLocation();
+			int dcId = 0;
+			if (v::is<StorageFileLocation>(photoLoc.file().data)) {
+				dcId = v::get<StorageFileLocation>(photoLoc.file().data).dcId();
+			}
+			if (dcId == 0) {
+				dcId = user->session().mainDcId();
+			}
+			QString dcLocation = u"Unknown"_q;
+			switch (dcId) {
+			case 1: dcLocation = u"Miami, US"_q; break;
+			case 2: dcLocation = u"Amsterdam, NL"_q; break;
+			case 3: dcLocation = u"Miami, US"_q; break;
+			case 4: dcLocation = u"Amsterdam, NL"_q; break;
+			case 5: dcLocation = u"Singapore, SG"_q; break;
+			}
+			const auto idSubtext = QString("DC%1, %2").arg(dcId).arg(dcLocation);
+			addInfoOneLine(
+				rpl::single(idSubtext),
+				rpl::single(TextWithEntities{ QString::number(bareId) }),
+				QString()
+			);
+		}
+
 		if (!user->isBot()) {
 			tracker.track(result->add(
 				CreateBirthday(result, controller, user),
@@ -1871,6 +1898,32 @@ Section DetailsFiller::makeInfo() {
 				Ui::DefaultShowFillPeerQrBoxCallback(show, peer);
 				return false;
 			});
+		}
+
+		if (Omnigram::ShowPeerIdEnabled()) {
+			const auto bareId = peerToBareMTPInt(_peer->id).v;
+			const auto photoLoc = _peer->userpicLocation();
+			int dcId = 0;
+			if (v::is<StorageFileLocation>(photoLoc.file().data)) {
+				dcId = v::get<StorageFileLocation>(photoLoc.file().data).dcId();
+			}
+			if (dcId == 0) {
+				dcId = _peer->session().mainDcId();
+			}
+			QString dcLocation = u"Unknown"_q;
+			switch (dcId) {
+			case 1: dcLocation = u"Miami, US"_q; break;
+			case 2: dcLocation = u"Amsterdam, NL"_q; break;
+			case 3: dcLocation = u"Miami, US"_q; break;
+			case 4: dcLocation = u"Amsterdam, NL"_q; break;
+			case 5: dcLocation = u"Singapore, SG"_q; break;
+			}
+			const auto idSubtext = QString("DC%1, %2").arg(dcId).arg(dcLocation);
+			addInfoOneLine(
+				rpl::single(idSubtext),
+				rpl::single(TextWithEntities{ QString::number(bareId) }),
+				QString()
+			);
 		}
 
 		if (const auto channel = _topic ? nullptr : _peer->asChannel()) {

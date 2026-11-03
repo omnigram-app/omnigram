@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "ui/unread_badge_paint.h"
 
+#include "omnigram/omnigram_settings.h"
 #include "ui/ui_utility.h"
 #include "styles/style_dialogs.h"
 
@@ -95,6 +96,21 @@ void CreateCircleMask(UnreadBadgeSizeData *data, int size) {
 }
 
 void PaintUnreadBadge(QPainter &p, const QRect &rect, const UnreadBadgeStyle &st) {
+	if (Omnigram::UseMacOSChatList()) {
+		// macOS pill badge: rounded rect with cornerRadius = height / 2.0
+		const auto hq = p.renderHints().testFlag(QPainter::Antialiasing);
+		p.setRenderHint(QPainter::Antialiasing, true);
+		p.setPen(Qt::NoPen);
+		const auto bg = st.muted
+			? st::dialogsUnreadBgMuted->c
+			: (st.active ? st::dialogsUnreadBgActive->c : st::dialogsUnreadBg->c);
+		p.setBrush(bg);
+		const auto radius = rect.height() / 2.0;
+		p.drawRoundedRect(rect, radius, radius);
+		p.setRenderHint(QPainter::Antialiasing, hq);
+		return;
+	}
+
 	Assert(rect.height() == st.size);
 
 	int index = (st.muted ? 0x03 : 0x00) + (st.active ? 0x02 : (st.selected ? 0x01 : 0x00));
