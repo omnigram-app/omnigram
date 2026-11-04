@@ -9,6 +9,8 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #include "omnigram/omnigram_settings.h"
 #include "settings/settings_builder.h"
 #include "settings/settings_common.h"
+#include "ui/vertical_list.h"
+#include "ui/widgets/buttons.h"
 #include "ui/widgets/checkbox.h"
 #include "ui/wrap/slide_wrap.h"
 #include "ui/wrap/vertical_layout.h"
@@ -53,12 +55,12 @@ private:
 	void setupContent();
 };
 
-const auto kMeta = Settings::BuildHelper({
+[[maybe_unused]] const auto kMeta = Settings::Builder::BuildHelper({
 	.id = OmnigramSection::Id(),
 	.parentId = Settings::MainId(),
 	.title = [] { return rpl::single(u"Omnigram macOS Mode"_q); },
 	.icon = &st::menuIconChatBubble,
-}, [](Settings::SectionBuilder &builder) {
+}, [](Settings::Builder::SectionBuilder &builder) {
 	SetupOmnigramSettings(builder.controller(), builder.container());
 });
 
@@ -99,51 +101,63 @@ void SetupOmnigramSettings(
 				? u"Classic"_q
 				: u"Custom"_q));
 
-	const auto presetBtn = AddButtonWithLabel(
+	AddToggle(
 		container,
-		rpl::single(u"Active Design Mode"_q),
-		modeLabel->value(),
-		st::settingsButton);
+		u"Preset: macOS Interface & Physics"_q,
+		settings.uiMode() == UIMode::MacOS,
+		[&settings, modeLabel](bool checked) {
+			if (checked) {
+				settings.setUIMode(UIMode::MacOS);
+				*modeLabel = u"macOS"_q;
+			}
+		});
 
-	presetBtn->setClickedCallback([=, &settings] {
-		auto nextMode = UIMode::MacOS;
-		if (settings.uiMode() == UIMode::MacOS) {
-			nextMode = UIMode::Classic;
-		} else if (settings.uiMode() == UIMode::Classic) {
-			nextMode = UIMode::Custom;
-		} else {
-			nextMode = UIMode::MacOS;
-		}
-		settings.setUIMode(nextMode);
-		*modeLabel = (nextMode == UIMode::MacOS)
-			? u"macOS"_q
-			: (nextMode == UIMode::Classic ? u"Classic"_q : u"Custom"_q);
-	});
+	AddToggle(
+		container,
+		u"Preset: Classic Telegram Desktop"_q,
+		settings.uiMode() == UIMode::Classic,
+		[&settings, modeLabel](bool checked) {
+			if (checked) {
+				settings.setUIMode(UIMode::Classic);
+				*modeLabel = u"Classic"_q;
+			}
+		});
+
+	AddToggle(
+		container,
+		u"Preset: Custom Granular Mode"_q,
+		settings.uiMode() == UIMode::Custom,
+		[&settings, modeLabel](bool checked) {
+			if (checked) {
+				settings.setUIMode(UIMode::Custom);
+				*modeLabel = u"Custom"_q;
+			}
+		});
 
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 	Ui::AddDivider(container);
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 
-	Ui::AddSubsectionTitle(container, rpl::single(u"Granular macOS Toggles"_q));
+	Ui::AddSubsectionTitle(container, rpl::single(u"macOS Elements (Granular)"_q));
 
 	// 1. Bubbles
 	AddToggle(
 		container,
-		u"macOS Message Bubbles (16pt/8pt radii with curved tail)"_q,
+		u"macOS Message Bubbles (16pt/8pt radii, carved tail)"_q,
 		settings.macOSBubbles(),
 		[&](bool checked) { settings.setMacOSBubbles(checked); });
 
-	// 2. Animations & Physics
+	// 2. Animations
 	AddToggle(
 		container,
-		u"macOS Spring Physics & Animations (0.4s parallax slide, bouncy spring)"_q,
+		u"macOS Spring Physics & Smooth Slide Transitions"_q,
 		settings.macOSAnimations(),
 		[&](bool checked) { settings.setMacOSAnimations(checked); });
 
 	// 3. Input bar
 	AddToggle(
 		container,
-		u"macOS Liquid Glass Capsule Input Bar (20pt capsule)"_q,
+		u"macOS Liquid Glass Capsule Input Bar (20pt radius)"_q,
 		settings.macOSInputBar(),
 		[&](bool checked) { settings.setMacOSInputBar(checked); });
 
@@ -200,10 +214,11 @@ void SetupOmnigramSettings(
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 
 	// Reset button
-	const auto resetBtn = AddButton(
-		container,
-		rpl::single(u"Reset Omnigram settings to defaults"_q),
-		st::settingsAttentionButton);
+	const auto resetBtn = container->add(
+		object_ptr<Ui::SettingsButton>(
+			container,
+			rpl::single(u"Reset Omnigram settings to defaults"_q),
+			st::settingsAttentionButton));
 
 	resetBtn->setClickedCallback([=, &settings] {
 		settings.resetToDefaults();
