@@ -209,7 +209,9 @@ void SlideAnimation::start() {
 	const auto curve = fromBottom
 		? anim::easeOutQuint
 		: useMacOS
-		? anim::transition(Omnigram::EvaluateSystemSpringBezier)
+		? anim::transition([](float64 delta, float64 dt) {
+			return delta * Omnigram::EvaluateSystemSpringBezier(dt);
+		})
 		: transition();
 	const auto duration = fromBottom
 		? (st::slideDuration * 2)
