@@ -9,6 +9,8 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #include "omnigram/omnigram_settings.h"
 #include "settings/settings_builder.h"
 #include "settings/settings_common.h"
+#include "settings/settings_common_session.h"
+#include "settings/sections/settings_main.h"
 #include "ui/vertical_list.h"
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/checkbox.h"
@@ -43,7 +45,7 @@ void AddToggle(
 	}, wrap->lifetime());
 }
 
-class OmnigramSection : public Settings::Section<OmnigramSection> {
+class OmnigramSection : public ::Settings::Section<OmnigramSection> {
 public:
 	OmnigramSection(
 		QWidget *parent,
@@ -55,12 +57,12 @@ private:
 	void setupContent();
 };
 
-[[maybe_unused]] const auto kMeta = Settings::Builder::BuildHelper({
+[[maybe_unused]] const auto kMeta = ::Settings::Builder::BuildHelper({
 	.id = OmnigramSection::Id(),
-	.parentId = Settings::MainId(),
+	.parentId = ::Settings::MainId(),
 	.title = [] { return rpl::single(u"Omnigram macOS Mode"_q); },
 	.icon = &st::menuIconChatBubble,
-}, [](Settings::Builder::SectionBuilder &builder) {
+}, [](::Settings::Builder::SectionBuilder &builder) {
 	SetupOmnigramSettings(builder.controller(), builder.container());
 });
 
@@ -81,14 +83,13 @@ void OmnigramSection::setupContent() {
 
 } // namespace
 
-Settings::Type OmnigramSectionId() {
+::Settings::Type OmnigramSectionId() {
 	return OmnigramSection::Id();
 }
 
 void SetupOmnigramSettings(
 		not_null<Window::SessionController*> controller,
 		not_null<Ui::VerticalLayout*> container) {
-	using namespace Settings;
 	auto &settings = Settings::Instance();
 
 	Ui::AddSubsectionTitle(container, rpl::single(u"Interface Preset"_q));
