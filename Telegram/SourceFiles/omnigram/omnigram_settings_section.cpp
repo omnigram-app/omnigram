@@ -7,10 +7,8 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 */
 #include "omnigram/omnigram_settings_section.h"
 #include "omnigram/omnigram_settings.h"
-#include "settings/settings_builder.h"
 #include "settings/settings_common.h"
 #include "settings/settings_common_session.h"
-#include "settings/sections/settings_main.h"
 #include "ui/vertical_list.h"
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/checkbox.h"
@@ -57,15 +55,6 @@ private:
 	void setupContent();
 };
 
-[[maybe_unused]] const auto kMeta = ::Settings::Builder::BuildHelper({
-	.id = OmnigramSection::Id(),
-	.parentId = ::Settings::MainId(),
-	.title = [] { return rpl::single(u"Omnigram macOS Mode"_q); },
-	.icon = &st::menuIconChatBubble,
-}, [](::Settings::Builder::SectionBuilder &builder) {
-	SetupOmnigramSettings(builder.controller(), builder.container());
-});
-
 OmnigramSection::OmnigramSection(
 	QWidget *parent,
 	not_null<Window::SessionController*> controller)
@@ -78,7 +67,9 @@ rpl::producer<QString> OmnigramSection::title() {
 }
 
 void OmnigramSection::setupContent() {
-	SetupOmnigramSettings(controller(), container());
+	const auto content = Ui::CreateChild<Ui::VerticalLayout>(this);
+	SetupOmnigramSettings(controller(), content);
+	Ui::ResizeFitChild(this, content);
 }
 
 } // namespace
