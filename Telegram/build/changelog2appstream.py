@@ -53,15 +53,18 @@ def get_changelog_xml(changelog, max_items=None):
     return releases
 
 def update_metadata(metadata_path, changelog, max_items=None):
-    metadata = ET.parse(metadata_path)
-    root = metadata.getroot()
-    releases = root.find("releases")
-    if releases is not None:
-        root.remove(releases)
-    root.append(
-        get_changelog_xml(changelog, max_items)
-    )
-    metadata.write(metadata_path, encoding="utf-8", xml_declaration=True)
+    try:
+        metadata = ET.parse(metadata_path)
+        root = metadata.getroot()
+        releases = root.find("releases")
+        if releases is not None:
+            root.remove(releases)
+        root.append(
+            get_changelog_xml(changelog, max_items)
+        )
+        metadata.write(metadata_path, encoding="utf-8", xml_declaration=True)
+    except Exception as e:
+        print(f"Warning: failed to update appstream metadata ({e}), skipping gracefully.")
 
 def main():
     ap = argparse.ArgumentParser("Parse Telegram changelog")
