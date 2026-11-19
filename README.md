@@ -49,6 +49,8 @@ Omnigram поддерживает раздельное переключение 
 
 ## План развития
 
+- **Массовое выделение чатов**: выбор нескольких диалогов в общем списке чатов (через Shift или режим выбора) для пакетного прочтения, отключения звука, отправки в архив или удаления.
+- **Локальные закрепления сообщений**: закрепление важных сообщений в любых чатах, группах и каналах только для себя, даже без прав администратора.
 - **Система плагинов**: запуск пользовательских скриптов на TypeScript через изолированную среду WebAssembly (WASM) для кастомизации логики клиента.
 - **Стиль Material Design 3**: альтернативная тема оформления на базе Material You со скруглёнными контейнерами, адаптивной цветовой палитрой и плавающими элементами.
 - **Движок тем на YAML**: читаемый формат описания стилей с мгновенным применением изменений без перезапуска программы.
@@ -104,6 +106,8 @@ Omnigram is a Telegram Desktop fork built on C++20 and Qt 6 that brings the inte
 
 ## Roadmap
 
+- **Batch Chat Selection**: select multiple chats in the dialog list (via Shift or multi-select mode) to mark as read, mute, archive, or delete in bulk.
+- **Local Pinned Messages**: pin messages in any chat, group, or channel locally for yourself, even without administrator rights.
 - **Plugin Engine**: runtime execution of custom TypeScript modules sandboxed with WebAssembly (WASM).
 - **Material Design 3**: optional Material You layout layer with dynamic color extraction and expressive rounded containers.
 - **YAML Theme System**: human-readable theme format with hot reloading support.

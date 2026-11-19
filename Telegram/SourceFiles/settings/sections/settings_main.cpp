@@ -401,7 +401,7 @@ void BuildSectionButtons(SectionBuilder &builder) {
 	});
 
 	builder.addSectionButton({
-		.title = rpl::single(u"Omnigram (macOS UI)"_q),
+		.title = rpl::single(u"Omnigram Settings"_q),
 		.targetSection = Omnigram::OmnigramSectionId(),
 		.icon = { &st::menuIconChatBubble },
 		.keywords = { u"omnigram"_q, u"macos"_q, u"design"_q, u"bubbles"_q },

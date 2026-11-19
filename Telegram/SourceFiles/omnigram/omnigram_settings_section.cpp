@@ -63,7 +63,7 @@ OmnigramSection::OmnigramSection(
 }
 
 rpl::producer<QString> OmnigramSection::title() {
-	return rpl::single(u"Omnigram macOS Mode"_q);
+	return rpl::single(u"Omnigram Settings"_q);
 }
 
 void OmnigramSection::setupContent() {
@@ -274,7 +274,7 @@ void SetupOmnigramSettings(
 	Ui::AddDivider(container);
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 
-	Ui::AddSubsectionTitle(container, rpl::single(u"Omnigram / AyuGram Features"_q));
+	Ui::AddSubsectionTitle(container, rpl::single(u"Omnigram Features"_q));
 
 	// 6. Exact Time with Seconds
 	AddToggle(
@@ -283,10 +283,10 @@ void SetupOmnigramSettings(
 		settings.exactTime(),
 		[&](bool checked) { settings.setExactTime(checked); });
 
-	// 7. AyuGram Profile Peer ID & DC
+	// 7. Profile Peer ID & DC
 	AddToggle(
 		container,
-		u"Show Peer ID & Datacenter in Profile (AyuGram style)"_q,
+		u"Show Peer ID & Datacenter in Profile"_q,
 		settings.showPeerId(),
 		[&](bool checked) { settings.setShowPeerId(checked); });
 

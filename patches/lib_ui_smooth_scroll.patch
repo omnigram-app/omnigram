@@ -1,22 +1,26 @@
 diff --git a/ui/widgets/elastic_scroll.cpp b/ui/widgets/elastic_scroll.cpp
-index cb5e573..d570fc3 100644
+index cb5e573..9125c6a 100644
 --- a/ui/widgets/elastic_scroll.cpp
 +++ b/ui/widgets/elastic_scroll.cpp
-@@ -958,7 +958,25 @@ bool ElasticScroll::handleWheelEvent(
+@@ -958,7 +958,29 @@ bool ElasticScroll::handleWheelEvent(
  			if (!weak) {
  				return true;
  			}
 -			tryScrollTo(_state.visibleFrom + delta);
-+			const auto currentPos = _smoothWheelAnimation.animating()
++			const auto currentTarget = _smoothWheelAnimation.animating()
 +				? _smoothWheelTarget
 +				: float64(_state.visibleFrom);
 +			_smoothWheelStart = float64(_state.visibleFrom);
-+			_smoothWheelTarget = currentPos + delta;
++			_smoothWheelTarget = currentTarget + delta;
++			const auto maxTarget = float64(scrollTill());
++			if (_smoothWheelTarget < 0.) {
++				_smoothWheelTarget = 0.;
++			} else if (_smoothWheelTarget > maxTarget) {
++				_smoothWheelTarget = maxTarget;
++			}
 +			_smoothWheelAnimation.start(
 +				[=] {
 +					const auto progress = _smoothWheelAnimation.value(1.);
-+					// System spring / cubic-bezier(0.23, 1.0, 0.32, 1.0) decelerating ease:
-+					// P(t) = 1 - (1 - t)^3 for buttery smooth 120fps kinetic decay
 +					const auto inv = 1. - progress;
 +					const auto ease = 1. - (inv * inv * inv);
 +					const auto next = int(base::SafeRound(
@@ -25,7 +29,7 @@ index cb5e573..d570fc3 100644
 +				},
 +				0.,
 +				1.,
-+				220); // 220ms smooth kinetic glide duration
++				220);
  			_movement = Movement::None;
  		} else if (!_overscrollReturnAnimation.animating()) {
  			overscrollReturn();

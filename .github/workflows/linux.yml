@@ -200,6 +200,7 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           cd out/Debug
+          strip Telegram || true
           mkdir artifact
           mv {Telegram,Updater} artifact/
       - uses: actions/upload-artifact@v7
