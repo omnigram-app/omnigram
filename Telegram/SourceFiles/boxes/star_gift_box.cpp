@@ -124,6 +124,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_chat.h"
 #include "styles/style_chat_helpers.h"
 #include "styles/style_credits.h"
+#include "styles/style_dialogs.h"
 #include "styles/style_giveaway.h"
 #include "styles/style_info.h"
 #include "styles/style_layers.h"
@@ -1640,6 +1641,7 @@ void AddBlock(
 	struct State {
 		rpl::variable<std::vector<GiftTypeStars>> gifts;
 		rpl::variable<int> priceTab = kPriceTabAll;
+		rpl::variable<QString> query;
 		rpl::event_stream<> myUpdated;
 		MyGiftsDescriptor my;
 		rpl::lifetime myLoading;
@@ -1659,11 +1661,29 @@ void AddBlock(
 	}, tabs.widget->lifetime());
 	result->add(std::move(tabs.widget));
 
+	const auto searchWrap = result->add(
+		object_ptr<Ui::FixedHeightWidget>(result, st::dialogsFilter.heightMin + st::giftBoxSelectSkip * 2),
+		st::giftBoxPadding);
+	const auto searchField = Ui::CreateChild<Ui::InputField>(
+		searchWrap,
+		st::dialogsFilter,
+		tr::lng_dlg_filter());
+	searchField->changes(
+	) | rpl::on_next([=] {
+		state->query = searchField->getLastText().trimmed();
+	}, searchField->lifetime());
+	searchWrap->widthValue(
+	) | rpl::on_next([=](int width) {
+		searchField->resize(width, st::dialogsFilter.heightMin);
+		searchField->moveToLeft(0, st::giftBoxSelectSkip);
+	}, searchField->lifetime());
+
 	auto gifts = rpl::combine(
 		state->gifts.value(),
 		state->priceTab.value(),
+		state->query.value(),
 		rpl::single(rpl::empty) | rpl::then(state->myUpdated.events())
-	) | rpl::map([=](std::vector<GiftTypeStars> &&gifts, int price, auto) {
+	) | rpl::map([=](std::vector<GiftTypeStars> &&gifts, int price, const QString &query, auto) {
 		if (price == kPriceTabMy) {
 			gifts.clear();
 			for (const auto &gift : state->my.list) {
@@ -1701,6 +1721,29 @@ void AddBlock(
 					|| IsSoldOut(gift.info);
 			};
 			gifts.erase(ranges::remove_if(gifts, pred), end(gifts));
+		}
+		const auto q = query.trimmed();
+		if (!q.isEmpty()) {
+			const auto lowerQ = q.toLower();
+			const auto numQ = q.startsWith('#') ? q.mid(1).toInt() : q.toInt();
+			gifts.erase(ranges::remove_if(gifts, [&](const GiftTypeStars &gift) {
+				if (gift.info.unique) {
+					if (gift.info.unique->title.contains(lowerQ, Qt::CaseInsensitive)) {
+						return false;
+					}
+					if (numQ > 0 && gift.info.unique->number == numQ) {
+						return false;
+					}
+				}
+				if (!gift.info.resellTitle.isEmpty()
+					&& gift.info.resellTitle.contains(lowerQ, Qt::CaseInsensitive)) {
+					return false;
+				}
+				if (numQ > 0 && gift.info.stars == numQ) {
+					return false;
+				}
+				return true;
+			}), end(gifts));
 		}
 		return GiftsDescriptor{
 			gifts | ranges::to<std::vector<GiftDescriptor>>(),

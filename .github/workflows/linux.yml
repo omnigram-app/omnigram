@@ -20,6 +20,9 @@ jobs:
   linux:
     name: Rocky Linux 8
     runs-on: ${{ (github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/nightly') && 'depot-ubuntu-latest-16' || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       matrix:
@@ -36,6 +39,12 @@ jobs:
         uses: actions/checkout@v7
         with:
           submodules: recursive
+
+      - name: Apply Omnigram submodule patches.
+        run: |
+          if [ -f "patches/lib_ui_smooth_scroll.patch" ]; then
+            git -C Telegram/lib_ui apply ../../patches/lib_ui_smooth_scroll.patch || true
+          fi
 
       - name: First set up.
         run: |
@@ -86,6 +95,23 @@ jobs:
           cache-from: type=local,src=${{ runner.temp }}/.buildx-cache
           cache-to: type=local,dest=${{ runner.temp }}/.buildx-cache-new,mode=max
 
+      - name: Log in to GitHub Container Registry
+        if: env.ONLY_CACHE == 'false'
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push libraries image to GHCR
+        if: env.ONLY_CACHE == 'false'
+        continue-on-error: true
+        run: |
+          IMAGE_REMOTE="ghcr.io/${{ github.repository }}/centos_env:latest"
+          docker tag ${{ env.IMAGE_TAG }} $IMAGE_REMOTE
+          docker push $IMAGE_REMOTE || echo "Push to GHCR skipped or failed, continuing..."
+
       - name: Move cache.
         run: |
           rm -rf ${{ runner.temp }}/.buildx-cache
@@ -128,7 +154,7 @@ jobs:
           -D CMAKE_COMPILE_WARNING_AS_ERROR=OFF \
           -D TDESKTOP_API_TEST=ON \
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=OFF \
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF \
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON \
           $DEFINE
 
       - name: Count ccache misses.

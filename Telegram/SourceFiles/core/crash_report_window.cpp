@@ -569,6 +569,10 @@ void LastCrashedWindow::addReportFieldPart(const QLatin1String &name, const QLat
 }
 
 void LastCrashedWindow::sendReport() {
+#ifdef TDESKTOP_DISABLE_CRASH_REPORTS
+	sendingFinished();
+	return;
+#endif // TDESKTOP_DISABLE_CRASH_REPORTS
 	if (_checkReply) {
 		_checkReply->deleteLater();
 		_checkReply = nullptr;

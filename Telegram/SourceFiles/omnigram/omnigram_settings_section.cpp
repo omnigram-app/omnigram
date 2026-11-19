@@ -130,42 +130,145 @@ void SetupOmnigramSettings(
 	Ui::AddDivider(container);
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 
-	Ui::AddSubsectionTitle(container, rpl::single(u"macOS Elements (Granular)"_q));
+	Ui::AddSubsectionTitle(container, rpl::single(u"macOS Elements"_q));
+
+	// Master "Enable All" toggle
+	const auto masterWrap = container->add(
+		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
+			container,
+			object_ptr<Ui::Checkbox>(
+				container,
+				u"Всё (Enable All macOS Features)"_q,
+				settings.macOSBubbles()
+					&& settings.macOSAnimations()
+					&& settings.macOSInputBar()
+					&& settings.macOSChatList()
+					&& settings.macOSSidebar(),
+				st::settingsCheckbox),
+			st::settingsSendTypePadding));
+	const auto masterCheckbox = masterWrap->entity();
+
+	struct ChildToggles {
+		Ui::Checkbox *bubbles = nullptr;
+		Ui::Checkbox *animations = nullptr;
+		Ui::Checkbox *input = nullptr;
+		Ui::Checkbox *chatList = nullptr;
+		Ui::Checkbox *sidebar = nullptr;
+		bool updatingFromMaster = false;
+	};
+	const auto toggles = container->lifetime().make_state<ChildToggles>();
+
+	const auto updateMasterState = [=] {
+		if (toggles->updatingFromMaster) {
+			return;
+		}
+		const auto all = (toggles->bubbles && toggles->bubbles->checked())
+			&& (toggles->animations && toggles->animations->checked())
+			&& (toggles->input && toggles->input->checked())
+			&& (toggles->chatList && toggles->chatList->checked())
+			&& (toggles->sidebar && toggles->sidebar->checked());
+		if (masterCheckbox->checked() != all) {
+			masterCheckbox->setChecked(all);
+		}
+	};
+
+	masterCheckbox->checkedChanges(
+	) | rpl::on_next([=, &settings](bool checked) {
+		toggles->updatingFromMaster = true;
+		if (toggles->bubbles) toggles->bubbles->setChecked(checked);
+		if (toggles->animations) toggles->animations->setChecked(checked);
+		if (toggles->input) toggles->input->setChecked(checked);
+		if (toggles->chatList) toggles->chatList->setChecked(checked);
+		if (toggles->sidebar) toggles->sidebar->setChecked(checked);
+		settings.setMacOSBubbles(checked);
+		settings.setMacOSAnimations(checked);
+		settings.setMacOSInputBar(checked);
+		settings.setMacOSChatList(checked);
+		settings.setMacOSSidebar(checked);
+		toggles->updatingFromMaster = false;
+	}, masterWrap->lifetime());
+
+	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 
 	// 1. Bubbles
-	AddToggle(
-		container,
-		u"macOS Message Bubbles (16pt/8pt radii, carved tail)"_q,
-		settings.macOSBubbles(),
-		[&](bool checked) { settings.setMacOSBubbles(checked); });
+	const auto bWrap = container->add(
+		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
+			container,
+			object_ptr<Ui::Checkbox>(
+				container,
+				u"Message Bubbles (16pt/8pt radii, carved tail)"_q,
+				settings.macOSBubbles(),
+				st::settingsCheckbox),
+			st::settingsSendTypePadding));
+	toggles->bubbles = bWrap->entity();
+	toggles->bubbles->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
+		settings.setMacOSBubbles(checked);
+		updateMasterState();
+	}, bWrap->lifetime());
 
-	// 2. Animations
-	AddToggle(
-		container,
-		u"macOS Spring Physics & Smooth Slide Transitions"_q,
-		settings.macOSAnimations(),
-		[&](bool checked) { settings.setMacOSAnimations(checked); });
+	// 2. Animations & Smooth Physics
+	const auto aWrap = container->add(
+		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
+			container,
+			object_ptr<Ui::Checkbox>(
+				container,
+				u"Spring Physics & Kinetic Smooth Scroll (120fps)"_q,
+				settings.macOSAnimations(),
+				st::settingsCheckbox),
+			st::settingsSendTypePadding));
+	toggles->animations = aWrap->entity();
+	toggles->animations->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
+		settings.setMacOSAnimations(checked);
+		updateMasterState();
+	}, aWrap->lifetime());
 
 	// 3. Input bar
-	AddToggle(
-		container,
-		u"macOS Liquid Glass Capsule Input Bar (20pt radius)"_q,
-		settings.macOSInputBar(),
-		[&](bool checked) { settings.setMacOSInputBar(checked); });
+	const auto iWrap = container->add(
+		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
+			container,
+			object_ptr<Ui::Checkbox>(
+				container,
+				u"Liquid Glass Capsule Input Bar (20pt radius)"_q,
+				settings.macOSInputBar(),
+				st::settingsCheckbox),
+			st::settingsSendTypePadding));
+	toggles->input = iWrap->entity();
+	toggles->input->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
+		settings.setMacOSInputBar(checked);
+		updateMasterState();
+	}, iWrap->lifetime());
 
 	// 4. Chat list
-	AddToggle(
-		container,
-		u"macOS Dialogs List (70pt rows, 50pt avatars, pill badges)"_q,
-		settings.macOSChatList(),
-		[&](bool checked) { settings.setMacOSChatList(checked); });
+	const auto cWrap = container->add(
+		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
+			container,
+			object_ptr<Ui::Checkbox>(
+				container,
+				u"macOS Dialogs List (70pt rows, 50pt avatars, pill badges)"_q,
+				settings.macOSChatList(),
+				st::settingsCheckbox),
+			st::settingsSendTypePadding));
+	toggles->chatList = cWrap->entity();
+	toggles->chatList->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
+		settings.setMacOSChatList(checked);
+		updateMasterState();
+	}, cWrap->lifetime());
 
 	// 5. Sidebar dock
-	AddToggle(
-		container,
-		u"macOS Floating Folders Dock (28pt glass dock on left)"_q,
-		settings.macOSSidebar(),
-		[&](bool checked) { settings.setMacOSSidebar(checked); });
+	const auto sWrap = container->add(
+		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
+			container,
+			object_ptr<Ui::Checkbox>(
+				container,
+				u"Floating Folders Dock (28pt glass dock on left)"_q,
+				settings.macOSSidebar(),
+				st::settingsCheckbox),
+			st::settingsSendTypePadding));
+	toggles->sidebar = sWrap->entity();
+	toggles->sidebar->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
+		settings.setMacOSSidebar(checked);
+		updateMasterState();
+	}, sWrap->lifetime());
 
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 	Ui::AddDivider(container);

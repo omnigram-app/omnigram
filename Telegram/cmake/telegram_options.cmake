@@ -41,6 +41,7 @@ if (DESKTOP_APP_DISABLE_AUTOUPDATE)
     target_compile_definitions(Telegram PRIVATE TDESKTOP_DISABLE_AUTOUPDATE)
 endif()
 
+option(DESKTOP_APP_DISABLE_CRASH_REPORTS "Disable crash reports and telemetry." ON)
 if (DESKTOP_APP_DISABLE_CRASH_REPORTS)
     target_compile_definitions(Telegram PRIVATE TDESKTOP_DISABLE_CRASH_REPORTS)
 endif()

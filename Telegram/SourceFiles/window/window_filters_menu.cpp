@@ -137,13 +137,28 @@ void FiltersMenu::setup() {
 	) | rpl::on_next([=](QRect clip) {
 		auto p = QPainter(&_outer);
 		p.setPen(Qt::NoPen);
-		p.setBrush(st::windowFiltersButton.textBg);
 		if (Omnigram::UseMacOSSidebar()) {
+			// First paint solid window/sidebar background to prevent transparent punch-through holes
+			p.fillRect(clip, st::windowBg);
+
 			// macOS Floating Liquid Glass dock: 28pt rounded concentric frame with NSEdgeInsets(8, 8, 8, 0)
 			p.setRenderHint(QPainter::Antialiasing, true);
 			const auto dockRect = _outer.rect().marginsRemoved(QMargins(8, 8, 0, 8));
+
+			// Ambient shadow behind the floating dock
+			p.setBrush(QColor(0, 0, 0, 30));
+			p.drawRoundedRect(dockRect.translated(0, 2), 28, 28);
+
+			// Dock glass body
+			p.setBrush(st::windowFiltersButton.textBg);
 			p.drawRoundedRect(dockRect, 28, 28);
+
+			// Glass rim highlight border (0.5px white sheen on top/left edges)
+			p.setBrush(Qt::NoBrush);
+			p.setPen(QPen(QColor(255, 255, 255, 45), 1.0));
+			p.drawRoundedRect(dockRect.adjusted(0, 0, -1, -1), 28, 28);
 		} else {
+			p.setBrush(st::windowFiltersButton.textBg);
 			p.drawRect(clip);
 		}
 	}, _outer.lifetime());
