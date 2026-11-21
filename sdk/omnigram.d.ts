@@ -11,6 +11,8 @@ export interface PluginManifest {
     author: string;
     main: string;
     enabled?: boolean;
+    /** Whether this plugin should have its own dedicated root section in main Settings */
+    standaloneSettingsTab?: boolean;
 }
 
 export interface ToastOptions {
@@ -26,11 +28,37 @@ export interface MessageEvent {
     isOutgoing: boolean;
 }
 
+export type SettingItemType = 'boolean' | 'string' | 'select' | 'button';
+
+export interface SettingSelectOption {
+    label: string;
+    value: string;
+}
+
+export interface SettingItem {
+    id: string;
+    type: SettingItemType;
+    title: string;
+    description?: string;
+    default?: any;
+    options?: SettingSelectOption[]; // For 'select' type
+    onClick?: () => void; // For 'button' type
+}
+
+export interface SettingsSectionOptions {
+    title: string;
+    icon?: string;
+    standaloneTab?: boolean;
+    items: SettingItem[];
+}
+
 export interface OmnigramUI {
     /** Show a floating toast notification in the application */
     showToast(text: string, options?: ToastOptions): void;
     /** Open Omnigram Settings */
     openSettings(): void;
+    /** Register native settings section (shown via gear icon or standalone tab) */
+    registerSettings(options: SettingsSectionOptions): void;
 }
 
 export interface OmnigramMessages {
