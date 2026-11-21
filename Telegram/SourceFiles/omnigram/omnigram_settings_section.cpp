@@ -7,7 +7,9 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 */
 #include "omnigram/omnigram_settings_section.h"
 #include "omnigram/omnigram_settings.h"
+#include "omnigram/plugins/plugin_manager.h"
 #include "chat_helpers/tabbed_panel.h"
+#include "core/file_utilities.h"
 #include "settings/settings_common.h"
 #include "settings/settings_common_session.h"
 #include "ui/vertical_list.h"
@@ -311,6 +313,58 @@ void SetupOmnigramSettings(
 		u"Open Emoji Panel only on click (disable hover pop-up)"_q,
 		ChatHelpers::ShowPanelOnClick(),
 		[&](bool checked) { ChatHelpers::SetShowPanelOnClick(checked); });
+
+	Ui::AddSkip(container, st::settingsCheckboxesSkip);
+	Ui::AddDivider(container);
+	Ui::AddSkip(container, st::settingsCheckboxesSkip);
+
+	Ui::AddSubsectionTitle(container, rpl::single(u"Plugins (TypeScript / JS)"_q));
+
+	auto &pluginManager = Plugins::PluginManager::Instance();
+	pluginManager.init();
+
+	// Open Plugins Folder button
+	const auto openFolderBtn = container->add(
+		object_ptr<Ui::SettingsButton>(
+			container,
+			rpl::single(u"Open Plugins Folder"_q),
+			st::settingsButton));
+
+	openFolderBtn->setClickedCallback([&] {
+		File::ShowInFolder(pluginManager.pluginsDirectory());
+	});
+
+	// Reload Plugins button
+	const auto reloadPluginsBtn = container->add(
+		object_ptr<Ui::SettingsButton>(
+			container,
+			rpl::single(u"Reload Plugins"_q),
+			st::settingsButton));
+
+	reloadPluginsBtn->setClickedCallback([&] {
+		pluginManager.discoverPlugins();
+	});
+
+	// List discovered plugins with toggles
+	const auto &plugins = pluginManager.plugins();
+	if (plugins.empty()) {
+		container->add(
+			object_ptr<Ui::FlatLabel>(
+				container,
+				u"No plugins installed yet. Put .ts/.js plugin folders into the plugins directory."_q,
+				st::settingsAboutLabel));
+	} else {
+		for (const auto &plugin : plugins) {
+			const auto &m = plugin->manifest();
+			AddToggle(
+				container,
+				m.name + u" (v"_q + m.version + u")"_q,
+				plugin->isRunning(),
+				[&pluginManager, id = m.id](bool checked) {
+					pluginManager.setPluginEnabled(id, checked);
+				});
+		}
+	}
 
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 	Ui::AddDivider(container);
