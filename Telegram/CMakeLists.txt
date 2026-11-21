@@ -128,6 +128,10 @@ PRIVATE
     omnigram/omnigram_spring_animation.h
     omnigram/omnigram_bubble_geometry.cpp
     omnigram/omnigram_bubble_geometry.h
+    omnigram/plugins/plugin.cpp
+    omnigram/plugins/plugin.h
+    omnigram/plugins/plugin_manager.cpp
+    omnigram/plugins/plugin_manager.h
 
     api/api_attached_stickers.cpp
     api/api_attached_stickers.h

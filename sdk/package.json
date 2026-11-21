@@ -1,0 +1,8 @@
+{
+  "name": "@omnigram/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK and type definitions for Omnigram plugins",
+  "main": "omnigram.d.ts",
+  "types": "omnigram.d.ts",
+  "license": "GPL-3.0"
+}
