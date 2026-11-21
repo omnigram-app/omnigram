@@ -1,0 +1,9 @@
+{
+  "id": "omnigram-auto-translator",
+  "name": "Auto Translator",
+  "version": "1.0.0",
+  "description": "Demonstration plugin that listens to incoming messages and formats sent text",
+  "author": "Omnigram Team",
+  "main": "index.ts",
+  "enabled": true
+}

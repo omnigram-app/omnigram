@@ -132,6 +132,8 @@ PRIVATE
     omnigram/plugins/plugin.h
     omnigram/plugins/plugin_manager.cpp
     omnigram/plugins/plugin_manager.h
+    omnigram/plugins/plugin_events.cpp
+    omnigram/plugins/plugin_events.h
 
     api/api_attached_stickers.cpp
     api/api_attached_stickers.h
