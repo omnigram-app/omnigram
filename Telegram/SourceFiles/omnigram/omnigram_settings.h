@@ -73,7 +73,7 @@ public:
 	void setMacOSSidebar(bool enabled);
 	[[nodiscard]] rpl::producer<bool> macOSSidebarValue() const;
 
-	// AyuGram / Kotatogram Features
+	// Omnigram Power-User Features
 	[[nodiscard]] bool exactTime() const;
 	void setExactTime(bool enabled);
 	[[nodiscard]] rpl::producer<bool> exactTimeValue() const;

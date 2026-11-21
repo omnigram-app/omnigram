@@ -1,0 +1,13 @@
+diff --git a/codegen/emoji/data.cpp b/codegen/emoji/data.cpp
+index ea10bb4..6ea7e3b 100644
+--- a/codegen/emoji/data.cpp
++++ b/codegen/emoji/data.cpp
+@@ -30,7 +30,7 @@ struct Replace {
+ Replace Replaces[] = {
+ 	{ { 0xD83DDE0AU }, ":-)" },
+ 	{ { 0xD83DDE0DU }, "8-)" },
+-	{ { 0x2764U }, "<3" },
++//	{ { 0x2764U }, "<3" },
+ //	{ { 0xD83DDC8BU }, ":kiss:" },
+ //	{ { 0xD83DDE01U }, ":grin:" },
+ //	{ { 0xD83DDE02U }, ":joy:" },

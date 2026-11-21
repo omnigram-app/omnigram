@@ -45,6 +45,9 @@ jobs:
           if [ -f "patches/lib_ui_smooth_scroll.patch" ]; then
             git -C Telegram/lib_ui apply ../../patches/lib_ui_smooth_scroll.patch || true
           fi
+          if [ -f "patches/codegen_emoji.patch" ]; then
+            git -C Telegram/codegen apply ../../patches/codegen_emoji.patch || true
+          fi
 
       - name: First set up.
         run: |

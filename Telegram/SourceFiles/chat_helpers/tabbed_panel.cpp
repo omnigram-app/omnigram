@@ -39,6 +39,10 @@ bool ShowPanelOnClick() {
 	return TabbedPanelShowOnClick.value();
 }
 
+void SetShowPanelOnClick(bool value) {
+	TabbedPanelShowOnClick.set(value);
+}
+
 TabbedPanel::TabbedPanel(
 	QWidget *parent,
 	not_null<Window::SessionController*> controller,

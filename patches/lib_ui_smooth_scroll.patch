@@ -1,8 +1,8 @@
 diff --git a/ui/widgets/elastic_scroll.cpp b/ui/widgets/elastic_scroll.cpp
-index cb5e573..9125c6a 100644
+index cb5e573..1ce647e 100644
 --- a/ui/widgets/elastic_scroll.cpp
 +++ b/ui/widgets/elastic_scroll.cpp
-@@ -958,7 +958,29 @@ bool ElasticScroll::handleWheelEvent(
+@@ -958,7 +958,23 @@ bool ElasticScroll::handleWheelEvent(
  			if (!weak) {
  				return true;
  			}
@@ -11,13 +11,7 @@ index cb5e573..9125c6a 100644
 +				? _smoothWheelTarget
 +				: float64(_state.visibleFrom);
 +			_smoothWheelStart = float64(_state.visibleFrom);
-+			_smoothWheelTarget = currentTarget + delta;
-+			const auto maxTarget = float64(scrollTill());
-+			if (_smoothWheelTarget < 0.) {
-+				_smoothWheelTarget = 0.;
-+			} else if (_smoothWheelTarget > maxTarget) {
-+				_smoothWheelTarget = maxTarget;
-+			}
++			_smoothWheelTarget = float64(willScrollTo(int(base::SafeRound(currentTarget + delta))));
 +			_smoothWheelAnimation.start(
 +				[=] {
 +					const auto progress = _smoothWheelAnimation.value(1.);

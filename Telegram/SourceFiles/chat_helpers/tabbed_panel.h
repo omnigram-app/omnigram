@@ -25,6 +25,7 @@ class TabbedSelector;
 
 extern const char kOptionTabbedPanelShowOnClick[];
 [[nodiscard]] bool ShowPanelOnClick();
+void SetShowPanelOnClick(bool value);
 
 struct TabbedPanelDescriptor {
 	Window::SessionController *regularWindow = nullptr;

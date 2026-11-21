@@ -7,6 +7,7 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 */
 #include "omnigram/omnigram_settings_section.h"
 #include "omnigram/omnigram_settings.h"
+#include "chat_helpers/tabbed_panel.h"
 #include "settings/settings_common.h"
 #include "settings/settings_common_session.h"
 #include "ui/vertical_list.h"
@@ -303,6 +304,13 @@ void SetupOmnigramSettings(
 		u"Unlock Client-Side Limits (Pinned chats, filters, etc.)"_q,
 		settings.clientLimitsRemoved(),
 		[&](bool checked) { settings.setClientLimitsRemoved(checked); });
+
+	// 10. Open Emoji & Stickers Panel only on click (not hover)
+	AddToggle(
+		container,
+		u"Open Emoji Panel only on click (disable hover pop-up)"_q,
+		ChatHelpers::ShowPanelOnClick(),
+		[&](bool checked) { ChatHelpers::SetShowPanelOnClick(checked); });
 
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 	Ui::AddDivider(container);
