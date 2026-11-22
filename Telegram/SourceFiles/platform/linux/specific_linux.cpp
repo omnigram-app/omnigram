@@ -712,16 +712,14 @@ QString ExecutablePathForShortcuts() {
 } // namespace Platform
 
 QString psAppDataPath() {
-	// Previously we used ~/.TelegramDesktop, so look there first.
-	// If we find data there, we should still use it.
 	auto home = QDir::homePath();
 	if (!home.isEmpty()) {
-		auto oldPath = home + u"/.TelegramDesktop/"_q;
-		auto oldSettingsBase = oldPath + u"tdata/settings"_q;
-		if (QFile::exists(oldSettingsBase + '0')
-			|| QFile::exists(oldSettingsBase + '1')
-			|| QFile::exists(oldSettingsBase + 's')) {
-			return oldPath;
+		auto omniPath = home + u"/.OmniGram/"_q;
+		auto omniSettings = omniPath + u"tdata/settings"_q;
+		if (QFile::exists(omniSettings + '0')
+			|| QFile::exists(omniSettings + '1')
+			|| QFile::exists(omniSettings + 's')) {
+			return omniPath;
 		}
 	}
 

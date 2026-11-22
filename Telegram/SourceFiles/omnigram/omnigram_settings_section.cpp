@@ -86,54 +86,7 @@ void SetupOmnigramSettings(
 		not_null<Ui::VerticalLayout*> container) {
 	auto &settings = Settings::Instance();
 
-	Ui::AddSubsectionTitle(container, rpl::single(u"Interface Preset"_q));
-
-	// Master Preset Buttons
-	const auto modeLabel = container->lifetime().make_state<rpl::variable<QString>>(
-		settings.uiMode() == UIMode::MacOS
-			? u"macOS"_q
-			: (settings.uiMode() == UIMode::Classic
-				? u"Classic"_q
-				: u"Custom"_q));
-
-	AddToggle(
-		container,
-		u"Preset: macOS Interface & Physics"_q,
-		settings.uiMode() == UIMode::MacOS,
-		[&settings, modeLabel](bool checked) {
-			if (checked) {
-				settings.setUIMode(UIMode::MacOS);
-				*modeLabel = u"macOS"_q;
-			}
-		});
-
-	AddToggle(
-		container,
-		u"Preset: Classic Telegram Desktop"_q,
-		settings.uiMode() == UIMode::Classic,
-		[&settings, modeLabel](bool checked) {
-			if (checked) {
-				settings.setUIMode(UIMode::Classic);
-				*modeLabel = u"Classic"_q;
-			}
-		});
-
-	AddToggle(
-		container,
-		u"Preset: Custom Granular Mode"_q,
-		settings.uiMode() == UIMode::Custom,
-		[&settings, modeLabel](bool checked) {
-			if (checked) {
-				settings.setUIMode(UIMode::Custom);
-				*modeLabel = u"Custom"_q;
-			}
-		});
-
-	Ui::AddSkip(container, st::settingsCheckboxesSkip);
-	Ui::AddDivider(container);
-	Ui::AddSkip(container, st::settingsCheckboxesSkip);
-
-	Ui::AddSubsectionTitle(container, rpl::single(u"macOS Elements"_q));
+	Ui::AddSubsectionTitle(container, rpl::single(u"macOS Interface & Physics"_q));
 
 	// Master "Enable All" toggle
 	const auto masterWrap = container->add(
@@ -352,7 +305,7 @@ void SetupOmnigramSettings(
 			object_ptr<Ui::FlatLabel>(
 				container,
 				u"No plugins installed yet. Put .ts/.js plugin folders into the plugins directory."_q,
-				st::settingsAboutLabel));
+				st::settingsScaleLabel));
 	} else {
 		for (const auto &plugin : plugins) {
 			const auto &m = plugin->manifest();
@@ -379,7 +332,6 @@ void SetupOmnigramSettings(
 
 	resetBtn->setClickedCallback([=, &settings] {
 		settings.resetToDefaults();
-		*modeLabel = u"macOS"_q;
 	});
 
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
