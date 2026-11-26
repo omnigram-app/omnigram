@@ -8,7 +8,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/view/controls/history_view_compose_controls.h"
 
 #include "history/view/controls/history_view_bot_menu_button.h"
-#include "omnigram/omnigram_settings.h"
 
 #include "base/call_delayed.h"
 #include "base/event_filter.h"
@@ -5732,45 +5731,6 @@ void ComposeControls::updateAttachBotsMenu() {
 }
 
 void ComposeControls::paintBackground(QPainter &p, QRect full, QRect clip) {
-	if (Omnigram::UseMacOSInputBar()) {
-		auto hq = PainterHighQualityEnabler(p);
-		constexpr auto r = 20; // 20pt Liquid Glass capsule radius
-		if (_commentsShown && !_commentsShown->isHidden()) {
-			p.setBrush(_st.bg);
-			p.setPen(Qt::NoPen);
-			p.drawRoundedRect(_commentsShown->geometry(), r, r);
-			full.setLeft(full.left()
-				+ _commentsShown->width()
-				+ _st.commentsSkip);
-		}
-		if (_starsReaction) {
-			full.setWidth(full.width()
-				- _starsReaction->width()
-				- _st.starsSkip);
-		}
-
-		// Liquid Glass Capsule:
-		// 1. Soft bottom ambient shadow
-		p.setPen(Qt::NoPen);
-		p.setBrush(QColor(0, 0, 0, 35));
-		p.drawRoundedRect(full.translated(0, 2), r, r);
-
-		// 2. Translucent Glass Fill Body
-		QColor glassBg = _st.bg->c;
-		glassBg.setAlpha(std::min(glassBg.alpha(), 220));
-		p.setBrush(glassBg);
-		p.drawRoundedRect(full, r, r);
-
-		// 3. Optical Specular Rim Highlight (upper edge refraction)
-		QLinearGradient rim(full.topLeft(), full.bottomLeft());
-		rim.setColorAt(0.0, QColor(255, 255, 255, 60));  // Shiny top rim
-		rim.setColorAt(0.5, QColor(255, 255, 255, 15));  // Mid refraction
-		rim.setColorAt(1.0, QColor(0, 0, 0, 40));         // Darkened lower bevel
-		p.setBrush(Qt::NoBrush);
-		p.setPen(QPen(QBrush(rim), 1.0));
-		p.drawRoundedRect(full.adjusted(0, 0, -1, -1), r, r);
-		return;
-	}
 	if (_backgroundRect) {
 		auto hq = PainterHighQualityEnabler(p);
 		p.setBrush(_st.bg);

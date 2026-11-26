@@ -7,7 +7,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "history/view/history_view_top_bar_widget.h"
 
-#include "omnigram/omnigram_settings.h"
 #include "history/history.h"
 #include "history/view/history_view_send_action.h"
 #include "boxes/add_contact_box.h"
@@ -548,8 +547,7 @@ void TopBarWidget::paintTopBar(Painter &p) {
 	if (!_activeChat.key || _narrowRatio == 1.) {
 		return;
 	}
-	const auto useMacOS = Omnigram::UseMacOSChatList();
-	auto nameleft = useMacOS ? std::max(_leftTaken, 46) : _leftTaken;
+	auto nameleft = _leftTaken;
 	auto statusleft = nameleft;
 	auto nametop = st::topBarArrowPadding.top();
 	auto statustop = st::topBarHeight - st::topBarArrowPadding.bottom() - st::dialogsTextFont->height;

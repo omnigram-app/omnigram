@@ -7,7 +7,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/window_filters_menu.h"
 
-#include "omnigram/omnigram_settings.h"
 #include "menu/menu_mark_as_read.h"
 #include "mainwindow.h"
 #include "window/window_session_controller.h"
@@ -137,25 +136,8 @@ void FiltersMenu::setup() {
 	) | rpl::on_next([=](QRect clip) {
 		auto p = QPainter(&_outer);
 		p.setPen(Qt::NoPen);
-		if (Omnigram::UseMacOSSidebar()) {
-			p.fillRect(clip, st::windowBg);
-
-			p.setRenderHint(QPainter::Antialiasing, true);
-			// Full height dock column with left border highlight
-			const auto fullRect = _outer.rect();
-
-			// Dock glass body
-			p.setBrush(st::windowFiltersButton.textBg);
-			p.drawRect(fullRect);
-
-			// Right border separator line
-			p.setBrush(Qt::NoBrush);
-			p.setPen(QPen(QColor(255, 255, 255, 20), 1.0));
-			p.drawLine(fullRect.topRight(), fullRect.bottomRight());
-		} else {
-			p.setBrush(st::windowFiltersButton.textBg);
-			p.drawRect(clip);
-		}
+		p.setBrush(st::windowFiltersButton.textBg);
+		p.drawRect(clip);
 	}, _outer.lifetime());
 
 	_parent->heightValue(

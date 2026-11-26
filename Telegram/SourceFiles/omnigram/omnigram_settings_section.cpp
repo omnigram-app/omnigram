@@ -7,18 +7,25 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 */
 #include "omnigram/omnigram_settings_section.h"
 #include "omnigram/omnigram_settings.h"
+#include "omnigram/omnigram_streamer_mode.h"
 #include "omnigram/plugins/plugin_manager.h"
 #include "chat_helpers/tabbed_panel.h"
 #include "core/file_utilities.h"
+#include "data/data_peer.h"
+#include "data/data_session.h"
+#include "boxes/peer_list_box.h"
+#include "boxes/peer_list_controllers.h"
 #include "settings/settings_common.h"
 #include "settings/settings_common_session.h"
 #include "ui/vertical_list.h"
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/checkbox.h"
+#include "ui/widgets/fields/input_field.h"
 #include "ui/wrap/slide_wrap.h"
 #include "ui/wrap/vertical_layout.h"
 #include "window/window_session_controller.h"
 #include "lang/lang_keys.h"
+#include "styles/style_boxes.h"
 #include "styles/style_settings.h"
 #include "styles/style_menu_icons.h"
 
@@ -44,6 +51,225 @@ void AddToggle(
 	) | rpl::on_next([=](bool checked) {
 		onChange(checked);
 	}, wrap->lifetime());
+}
+
+void AddInputFieldRow(
+		not_null<Ui::VerticalLayout*> container,
+		const QString &placeholder,
+		const QString &initial,
+		Fn<void(const QString&)> onChange) {
+	const auto field = container->add(
+		object_ptr<Ui::InputField>(
+			container,
+			st::defaultInputField,
+			placeholder,
+			initial),
+		st::settingsSendTypePadding);
+
+	QObject::connect(field, &Ui::InputField::changed, [=] {
+		onChange(field->getLastText());
+	});
+}
+
+void OpenPeerSelector(
+		not_null<Window::SessionController*> controller,
+		const QString &title,
+		const QSet<uint64> &initialSelected,
+		Fn<void(QSet<uint64>)> onSave) {
+	class CustomChatsController final : public ChatsListBoxController {
+	public:
+		CustomChatsController(
+			not_null<Main::Session*> session,
+			const QSet<uint64> &selected)
+		: ChatsListBoxController(session)
+		, _selected(selected) {
+		}
+
+		void prepareViewHook() override {
+			delegate()->peerListSetSearchMode(PeerListSearchMode::Enabled);
+			for (const auto id : _selected) {
+				if (const auto peer = session().data().peer(PeerId(id))) {
+					delegate()->peerListAddSelectedPeer(peer);
+				}
+			}
+		}
+
+		void rowClicked(not_null<PeerListRow*> row) override {
+			delegate()->peerListSetRowChecked(row, !row->checked());
+		}
+
+	private:
+		QSet<uint64> _selected;
+	};
+
+	auto listController = std::make_unique<CustomChatsController>(
+		&controller->session(),
+		initialSelected);
+	auto initBox = [=, raw = listController.get()](not_null<PeerListBox*> box) {
+		box->setTitle(rpl::single(title));
+		box->addButton(tr::lng_settings_save(), [=] {
+			const auto peers = box->collectSelectedRows();
+			QSet<uint64> result;
+			for (const auto peer : peers) {
+				result.insert(peer->id.value);
+			}
+			onSave(result);
+			box->closeBox();
+		});
+		box->addButton(tr::lng_cancel(), [box] { box->closeBox(); });
+	};
+
+	controller->show(
+		Box<PeerListBox>(std::move(listController), std::move(initBox)));
+}
+
+void SetupStreamerTargetBlock(
+		not_null<Window::SessionController*> controller,
+		not_null<Ui::VerticalLayout*> container,
+		StreamerTarget target,
+		const QString &title) {
+	auto &streamer = StreamerMode::Instance();
+	auto &rule = streamer.rule(target);
+
+	Ui::AddSubsectionTitle(container, rpl::single(title));
+
+	AddToggle(
+		container,
+		u"Hide Username"_q,
+		rule.hideUsername,
+		[&](bool checked) {
+			rule.hideUsername = checked;
+			streamer.save();
+		});
+	AddInputFieldRow(
+		container,
+		u"Custom Username replacement (default: *)"_q,
+		rule.customUsername,
+		[&](const QString &text) {
+			rule.customUsername = text.trimmed().isEmpty() ? u"*"_q : text.trimmed();
+			streamer.save();
+		});
+
+	AddToggle(
+		container,
+		u"Hide Peer ID"_q,
+		rule.hidePeerId,
+		[&](bool checked) {
+			rule.hidePeerId = checked;
+			streamer.save();
+		});
+	AddInputFieldRow(
+		container,
+		u"Custom Peer ID replacement (default: *)"_q,
+		rule.customPeerId,
+		[&](const QString &text) {
+			rule.customPeerId = text.trimmed().isEmpty() ? u"*"_q : text.trimmed();
+			streamer.save();
+		});
+
+	AddToggle(
+		container,
+		u"Hide Phone Number"_q,
+		rule.hidePhone,
+		[&](bool checked) {
+			rule.hidePhone = checked;
+			streamer.save();
+		});
+	AddInputFieldRow(
+		container,
+		u"Custom Phone replacement (default: *)"_q,
+		rule.customPhone,
+		[&](const QString &text) {
+			rule.customPhone = text.trimmed().isEmpty() ? u"*"_q : text.trimmed();
+			streamer.save();
+		});
+
+	AddToggle(
+		container,
+		u"Hide Display Name"_q,
+		rule.hideName,
+		[&](bool checked) {
+			rule.hideName = checked;
+			streamer.save();
+		});
+	AddInputFieldRow(
+		container,
+		u"Custom Display Name replacement (default: *)"_q,
+		rule.customName,
+		[&](const QString &text) {
+			rule.customName = text.trimmed().isEmpty() ? u"*"_q : text.trimmed();
+			streamer.save();
+		});
+
+	AddToggle(
+		container,
+		u"Hide Avatar (Replace with custom photo)"_q,
+		rule.hideAvatar,
+		[&](bool checked) {
+			rule.hideAvatar = checked;
+			streamer.save();
+		});
+
+	const auto pickAvatarBtn = container->add(
+		object_ptr<Ui::SettingsButton>(
+			container,
+			rpl::single(rule.customAvatarPath.isEmpty()
+				? u"Select Custom Avatar Image..."_q
+				: u"Change Custom Avatar ("_q + QFileInfo(rule.customAvatarPath).fileName() + u")"_q),
+			st::settingsButton));
+
+	pickAvatarBtn->setClickedCallback([=, &streamer, &rule] {
+		FileDialog::GetOpenPath(
+			controller->widget(),
+			u"Choose Custom Avatar Image"_q,
+			FileDialog::ImagesFilter(),
+			[=, &streamer, &rule](FileDialog::OpenResult &&result) {
+				if (!result.paths.isEmpty()) {
+					rule.customAvatarPath = result.paths.front();
+					streamer.save();
+				}
+			});
+	});
+
+	if (target == StreamerTarget::Selected) {
+		const auto selectedCount = rule.selectedPeers.size();
+		const auto selectPeersBtn = container->add(
+			object_ptr<Ui::SettingsButton>(
+				container,
+				rpl::single(u"Selected Peers ("_q + QString::number(selectedCount) + u")"_q),
+				st::settingsButton));
+
+		selectPeersBtn->setClickedCallback([=, &streamer, &rule] {
+			OpenPeerSelector(
+				controller,
+				u"Select Peers for Streamer Mode"_q,
+				rule.selectedPeers,
+				[=, &streamer, &rule](QSet<uint64> peers) {
+					rule.selectedPeers = peers;
+					streamer.save();
+				});
+		});
+	}
+
+	const auto excCount = rule.exceptions.size();
+	const auto excBtn = container->add(
+		object_ptr<Ui::SettingsButton>(
+			container,
+			rpl::single(u"Exceptions ("_q + QString::number(excCount) + u")"_q),
+			st::settingsButton));
+
+	excBtn->setClickedCallback([=, &streamer, &rule] {
+		OpenPeerSelector(
+			controller,
+			u"Select Exceptions"_q,
+			rule.exceptions,
+			[=, &streamer, &rule](QSet<uint64> exceptions) {
+				rule.exceptions = exceptions;
+				streamer.save();
+			});
+	});
+
+	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 }
 
 class OmnigramSection : public ::Settings::Section<OmnigramSection> {
@@ -85,146 +311,23 @@ void SetupOmnigramSettings(
 		not_null<Window::SessionController*> controller,
 		not_null<Ui::VerticalLayout*> container) {
 	auto &settings = Settings::Instance();
+	auto &streamer = StreamerMode::Instance();
 
-	Ui::AddSubsectionTitle(container, rpl::single(u"macOS Interface & Physics"_q));
+	// --- STREAMER MODE SECTION ---
+	Ui::AddSubsectionTitle(container, rpl::single(u"Streamer Mode (Privacy & Anti-Doxx)"_q));
 
-	// Master "Enable All" toggle
-	const auto masterWrap = container->add(
-		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
-			container,
-			object_ptr<Ui::Checkbox>(
-				container,
-				u"Всё (Enable All macOS Features)"_q,
-				settings.macOSBubbles()
-					&& settings.macOSAnimations()
-					&& settings.macOSInputBar()
-					&& settings.macOSChatList()
-					&& settings.macOSSidebar(),
-				st::settingsCheckbox),
-			st::settingsSendTypePadding));
-	const auto masterCheckbox = masterWrap->entity();
+	AddToggle(
+		container,
+		u"Enable Streamer Mode"_q,
+		streamer.enabled(),
+		[&](bool checked) {
+			streamer.setEnabled(checked);
+		});
 
-	struct ChildToggles {
-		Ui::Checkbox *bubbles = nullptr;
-		Ui::Checkbox *animations = nullptr;
-		Ui::Checkbox *input = nullptr;
-		Ui::Checkbox *chatList = nullptr;
-		Ui::Checkbox *sidebar = nullptr;
-		bool updatingFromMaster = false;
-	};
-	const auto toggles = container->lifetime().make_state<ChildToggles>();
-
-	const auto updateMasterState = [=] {
-		if (toggles->updatingFromMaster) {
-			return;
-		}
-		const auto all = (toggles->bubbles && toggles->bubbles->checked())
-			&& (toggles->animations && toggles->animations->checked())
-			&& (toggles->input && toggles->input->checked())
-			&& (toggles->chatList && toggles->chatList->checked())
-			&& (toggles->sidebar && toggles->sidebar->checked());
-		if (masterCheckbox->checked() != all) {
-			masterCheckbox->setChecked(all);
-		}
-	};
-
-	masterCheckbox->checkedChanges(
-	) | rpl::on_next([=, &settings](bool checked) {
-		toggles->updatingFromMaster = true;
-		if (toggles->bubbles) toggles->bubbles->setChecked(checked);
-		if (toggles->animations) toggles->animations->setChecked(checked);
-		if (toggles->input) toggles->input->setChecked(checked);
-		if (toggles->chatList) toggles->chatList->setChecked(checked);
-		if (toggles->sidebar) toggles->sidebar->setChecked(checked);
-		settings.setMacOSBubbles(checked);
-		settings.setMacOSAnimations(checked);
-		settings.setMacOSInputBar(checked);
-		settings.setMacOSChatList(checked);
-		settings.setMacOSSidebar(checked);
-		toggles->updatingFromMaster = false;
-	}, masterWrap->lifetime());
-
-	Ui::AddSkip(container, st::settingsCheckboxesSkip);
-
-	// 1. Bubbles
-	const auto bWrap = container->add(
-		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
-			container,
-			object_ptr<Ui::Checkbox>(
-				container,
-				u"Message Bubbles (16pt/8pt radii, carved tail)"_q,
-				settings.macOSBubbles(),
-				st::settingsCheckbox),
-			st::settingsSendTypePadding));
-	toggles->bubbles = bWrap->entity();
-	toggles->bubbles->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
-		settings.setMacOSBubbles(checked);
-		updateMasterState();
-	}, bWrap->lifetime());
-
-	// 2. Animations & Smooth Physics
-	const auto aWrap = container->add(
-		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
-			container,
-			object_ptr<Ui::Checkbox>(
-				container,
-				u"Spring Physics & Kinetic Smooth Scroll (120fps)"_q,
-				settings.macOSAnimations(),
-				st::settingsCheckbox),
-			st::settingsSendTypePadding));
-	toggles->animations = aWrap->entity();
-	toggles->animations->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
-		settings.setMacOSAnimations(checked);
-		updateMasterState();
-	}, aWrap->lifetime());
-
-	// 3. Input bar
-	const auto iWrap = container->add(
-		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
-			container,
-			object_ptr<Ui::Checkbox>(
-				container,
-				u"Liquid Glass Capsule Input Bar (20pt radius)"_q,
-				settings.macOSInputBar(),
-				st::settingsCheckbox),
-			st::settingsSendTypePadding));
-	toggles->input = iWrap->entity();
-	toggles->input->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
-		settings.setMacOSInputBar(checked);
-		updateMasterState();
-	}, iWrap->lifetime());
-
-	// 4. Chat list
-	const auto cWrap = container->add(
-		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
-			container,
-			object_ptr<Ui::Checkbox>(
-				container,
-				u"macOS Dialogs List (70pt rows, 50pt avatars, pill badges)"_q,
-				settings.macOSChatList(),
-				st::settingsCheckbox),
-			st::settingsSendTypePadding));
-	toggles->chatList = cWrap->entity();
-	toggles->chatList->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
-		settings.setMacOSChatList(checked);
-		updateMasterState();
-	}, cWrap->lifetime());
-
-	// 5. Sidebar dock
-	const auto sWrap = container->add(
-		object_ptr<Ui::SlideWrap<Ui::Checkbox>>(
-			container,
-			object_ptr<Ui::Checkbox>(
-				container,
-				u"Floating Folders Dock (28pt glass dock on left)"_q,
-				settings.macOSSidebar(),
-				st::settingsCheckbox),
-			st::settingsSendTypePadding));
-	toggles->sidebar = sWrap->entity();
-	toggles->sidebar->checkedChanges() | rpl::on_next([=, &settings](bool checked) {
-		settings.setMacOSSidebar(checked);
-		updateMasterState();
-	}, sWrap->lifetime());
+	SetupStreamerTargetBlock(controller, container, StreamerTarget::Everyone, u"Target: Everyone"_q);
+	SetupStreamerTargetBlock(controller, container, StreamerTarget::Self, u"Target: Self (Current Account)"_q);
+	SetupStreamerTargetBlock(controller, container, StreamerTarget::Contacts, u"Target: Contacts"_q);
+	SetupStreamerTargetBlock(controller, container, StreamerTarget::Selected, u"Target: Selected Specific Peers"_q);
 
 	Ui::AddSkip(container, st::settingsCheckboxesSkip);
 	Ui::AddDivider(container);
@@ -232,35 +335,42 @@ void SetupOmnigramSettings(
 
 	Ui::AddSubsectionTitle(container, rpl::single(u"Omnigram Features"_q));
 
-	// 6. Exact Time with Seconds
+	// 1. Exact Time with Seconds
 	AddToggle(
 		container,
 		u"Show Exact Message Time (hh:mm:ss)"_q,
 		settings.exactTime(),
 		[&](bool checked) { settings.setExactTime(checked); });
 
-	// 7. Profile Peer ID & DC
+	// 2. Profile Peer ID & DC
 	AddToggle(
 		container,
 		u"Show Peer ID & Datacenter in Profile"_q,
 		settings.showPeerId(),
 		[&](bool checked) { settings.setShowPeerId(checked); });
 
-	// 8. No Ads / Remove Sponsored
+	// 3. No Ads / Remove Sponsored
 	AddToggle(
 		container,
 		u"Block Sponsored Messages (No Ads)"_q,
 		settings.noAds(),
 		[&](bool checked) { settings.setNoAds(checked); });
 
-	// 9. Remove Client-Side Limits
+	// 4. Remove Client-Side Limits
 	AddToggle(
 		container,
 		u"Unlock Client-Side Limits (Pinned chats, filters, etc.)"_q,
 		settings.clientLimitsRemoved(),
 		[&](bool checked) { settings.setClientLimitsRemoved(checked); });
 
-	// 10. Open Emoji & Stickers Panel only on click (not hover)
+	// 5. Fast Download & Upload Boost
+	AddToggle(
+		container,
+		u"Fast Download & Upload (up to 16 parallel connections)"_q,
+		settings.fastDownload(),
+		[&](bool checked) { settings.setFastDownload(checked); });
+
+	// 6. Open Emoji & Stickers Panel only on click (not hover)
 	AddToggle(
 		container,
 		u"Open Emoji Panel only on click (disable hover pop-up)"_q,

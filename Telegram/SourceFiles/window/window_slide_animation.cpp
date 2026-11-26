@@ -7,8 +7,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/window_slide_animation.h"
 #include "styles/style_basic.h"
-#include "omnigram/omnigram_settings.h"
-#include "omnigram/omnigram_spring_animation.h"
 
 
 namespace Window {
@@ -114,13 +112,9 @@ void SlideAnimation::paintContents(QPainter &p) const {
 			_cacheOver,
 			QRect(QPoint(), _cacheOver.size()));
 	} else {
-		const auto underWidth = _cacheUnder.width() / retina;
-		const auto shift = Omnigram::UseMacOSAnimations()
-			? (underWidth / 3)
-			: st::slideShift;
 		const auto coordUnder = anim::interpolate(
 			0,
-			-shift,
+			-st::slideShift,
 			progress);
 		const auto coordOver = anim::interpolate(
 			_cacheOver.width() / retina,
@@ -205,18 +199,9 @@ void SlideAnimation::start() {
 		std::swap(_cacheUnder, _cacheOver);
 	}
 	const auto fromBottom = (_direction == SlideDirection::FromBottom);
-	const auto useMacOS = Omnigram::UseMacOSAnimations();
-	const auto curve = fromBottom
-		? anim::easeOutQuint
-		: useMacOS
-		? anim::transition([](float64 delta, float64 dt) {
-			return delta * Omnigram::EvaluateSystemSpringBezier(dt);
-		})
-		: transition();
+	const auto curve = fromBottom ? anim::easeOutQuint : transition();
 	const auto duration = fromBottom
 		? (st::slideDuration * 2)
-		: useMacOS
-		? 400 // exact 0.4s macOS push/pop
 		: st::slideDuration;
 	_animation.start(
 		[this] { animationCallback(); },

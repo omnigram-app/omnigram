@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_forum_icons.h"
 #include "data/data_saved_music.h"
 #include "data/data_session.h"
+#include "omnigram/omnigram_streamer_mode.h"
 #include "data/data_changes.h"
 #include "data/data_peer_bot_command.h"
 #include "data/data_photo.h"
@@ -817,6 +818,11 @@ void UserData::setBotVerifyDetailsIcon(DocumentId iconId) {
 }
 
 const QString &UserData::phone() const {
+	if (Omnigram::StreamerMode::Instance().shouldHidePhone(this)) {
+		static thread_local QString masked;
+		masked = Omnigram::StreamerMode::Instance().maskedPhone(this);
+		return masked;
+	}
 	return _phone;
 }
 

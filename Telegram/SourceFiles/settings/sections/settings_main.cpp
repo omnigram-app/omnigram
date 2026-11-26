@@ -404,7 +404,7 @@ void BuildSectionButtons(SectionBuilder &builder) {
 		.title = rpl::single(u"Omnigram Settings"_q),
 		.targetSection = Omnigram::OmnigramSectionId(),
 		.icon = { &st::menuIconChatBubble },
-		.keywords = { u"omnigram"_q, u"macos"_q, u"design"_q, u"bubbles"_q },
+		.keywords = { u"omnigram"_q, u"plugins"_q, u"features"_q, u"seconds"_q },
 	});
 
 	{ // Folders

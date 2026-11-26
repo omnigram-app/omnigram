@@ -34,6 +34,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/click_handler_types.h"
 #include "core/ui_integration.h"
 #include "omnigram/omnigram_settings.h"
+#include "omnigram/omnigram_streamer_mode.h"
 #include "data/business/data_business_common.h"
 #include "data/business/data_business_info.h"
 #include "data/components/credits.h"
@@ -1798,9 +1799,12 @@ Section DetailsFiller::makeInfo() {
 			case 5: dcLocation = u"Singapore, SG"_q; break;
 			}
 			const auto idSubtext = QString("DC%1, %2").arg(dcId).arg(dcLocation);
+			const auto idText = Omnigram::StreamerMode::Instance().shouldHidePeerId(user)
+				? Omnigram::StreamerMode::Instance().maskedPeerId(user)
+				: QString::number(bareId);
 			addInfoOneLine(
 				rpl::single(idSubtext),
-				rpl::single(TextWithEntities{ QString::number(bareId) }),
+				rpl::single(TextWithEntities{ idText }),
 				QString()
 			);
 		}
@@ -1919,9 +1923,12 @@ Section DetailsFiller::makeInfo() {
 			case 5: dcLocation = u"Singapore, SG"_q; break;
 			}
 			const auto idSubtext = QString("DC%1, %2").arg(dcId).arg(dcLocation);
+			const auto idText = Omnigram::StreamerMode::Instance().shouldHidePeerId(_peer)
+				? Omnigram::StreamerMode::Instance().maskedPeerId(_peer)
+				: QString::number(bareId);
 			addInfoOneLine(
 				rpl::single(idSubtext),
-				rpl::single(TextWithEntities{ QString::number(bareId) }),
+				rpl::single(TextWithEntities{ idText }),
 				QString()
 			);
 		}

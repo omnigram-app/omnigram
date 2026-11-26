@@ -54,6 +54,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "storage/storage_account.h"
 #include "storage/storage_facade.h"
 #include "storage/storage_shared_media.h"
+#include "omnigram/omnigram_streamer_mode.h"
 
 namespace {
 
@@ -447,11 +448,26 @@ void PeerData::paintUserpic(
 		return;
 	}
 	const auto size = context.size;
-	const auto cloud = userpicCloudImage(view);
 	const auto ratio = style::DevicePixelRatio();
 	if (context.shape == Ui::PeerUserpicShape::Auto) {
 		context.shape = userpicShape();
 	}
+
+	if (Omnigram::StreamerMode::Instance().shouldHideAvatar(this)) {
+		const auto custom = Omnigram::StreamerMode::Instance().customAvatar(this);
+		if (!custom.isNull()) {
+			Ui::ValidateUserpicCache(
+				view,
+				&custom,
+				nullptr,
+				size * ratio,
+				context.shape);
+			p.drawImage(QRect(context.position, QSize(size, size)), view.cached);
+			return;
+		}
+	}
+
+	const auto cloud = userpicCloudImage(view);
 	Ui::ValidateUserpicCache(
 		view,
 		cloud,
@@ -1324,6 +1340,11 @@ ChannelData *PeerData::broadcastMonoforum() const {
 }
 
 const QString &PeerData::topBarNameText() const {
+	if (Omnigram::StreamerMode::Instance().shouldHideName(this)) {
+		static thread_local QString masked;
+		masked = Omnigram::StreamerMode::Instance().maskedName(this);
+		return masked;
+	}
 	if (const auto to = migrateTo()) {
 		return to->topBarNameText();
 	} else if (const auto user = asUser()) {
@@ -1339,6 +1360,11 @@ int PeerData::nameVersion() const {
 }
 
 const QString &PeerData::name() const {
+	if (Omnigram::StreamerMode::Instance().shouldHideName(this)) {
+		static thread_local QString masked;
+		masked = Omnigram::StreamerMode::Instance().maskedName(this);
+		return masked;
+	}
 	if (const auto to = migrateTo()) {
 		return to->name();
 	} else if (const auto broadcast = monoforumBroadcast()) {
@@ -1348,6 +1374,11 @@ const QString &PeerData::name() const {
 }
 
 const QString &PeerData::shortName() const {
+	if (Omnigram::StreamerMode::Instance().shouldHideName(this)) {
+		static thread_local QString masked;
+		masked = Omnigram::StreamerMode::Instance().maskedName(this);
+		return masked;
+	}
 	if (const auto user = asUser()) {
 		return user->firstName.isEmpty() ? user->lastName : user->firstName;
 	} else if (const auto to = migrateTo()) {
@@ -1359,6 +1390,9 @@ const QString &PeerData::shortName() const {
 }
 
 QString PeerData::username() const {
+	if (Omnigram::StreamerMode::Instance().shouldHideUsername(this)) {
+		return Omnigram::StreamerMode::Instance().maskedUsername(this);
+	}
 	if (const auto user = asUser()) {
 		return user->username();
 	} else if (const auto channel = asChannel()) {
@@ -1368,6 +1402,9 @@ QString PeerData::username() const {
 }
 
 QString PeerData::editableUsername() const {
+	if (Omnigram::StreamerMode::Instance().shouldHideUsername(this)) {
+		return Omnigram::StreamerMode::Instance().maskedUsername(this);
+	}
 	if (const auto user = asUser()) {
 		return user->editableUsername();
 	} else if (const auto channel = asChannel()) {
@@ -1377,6 +1414,11 @@ QString PeerData::editableUsername() const {
 }
 
 const std::vector<QString> &PeerData::usernames() const {
+	if (Omnigram::StreamerMode::Instance().shouldHideUsername(this)) {
+		static thread_local std::vector<QString> masked;
+		masked = { Omnigram::StreamerMode::Instance().maskedUsername(this) };
+		return masked;
+	}
 	if (const auto user = asUser()) {
 		return user->usernames();
 	} else if (const auto channel = asChannel()) {

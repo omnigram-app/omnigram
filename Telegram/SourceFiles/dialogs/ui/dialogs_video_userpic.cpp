@@ -7,7 +7,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "dialogs/ui/dialogs_video_userpic.h"
 
-#include "omnigram/omnigram_settings.h"
 #include "core/file_location.h"
 #include "data/data_peer.h"
 #include "data/data_photo.h"
@@ -141,18 +140,15 @@ void PaintUserpic(
 		PeerUserpicView &view,
 		const Ui::PaintContext &context) {
 	if (peer) {
-		const auto useMacOS = Omnigram::UseMacOSChatList();
-		const auto photoSize = useMacOS ? 50 : context.st->photoSize;
-		const auto photoTop = useMacOS ? ((70 - photoSize) / 2) : context.st->padding.top();
 		PaintUserpic(
 			p,
 			peer,
 			videoUserpic,
 			view,
 			context.st->padding.left(),
-			photoTop,
+			context.st->padding.top(),
 			context.width,
-			photoSize,
+			context.st->photoSize,
 			context.paused);
 	} else {
 		entry->paintUserpic(p, view, context);

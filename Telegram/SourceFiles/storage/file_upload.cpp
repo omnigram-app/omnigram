@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/application.h"
 #include "core/mime_type.h"
 #include "media/media_video_encode.h"
+#include "omnigram/omnigram_settings.h"
 #include "main/main_session.h"
 #include "storage/storage_account.h"
 #include "apiwrap.h"
@@ -689,7 +690,10 @@ QByteArray Uploader::readDocPart(not_null<Entry*> entry) {
 
 bool Uploader::canAddDcIndex() const {
 	const auto count = int(_sentPerDcIndex.size());
-	return (count < kMaxSessionsCount)
+	const auto maxSessions = Omnigram::FastDownloadEnabled()
+		? MTP::kMaxMediaDcCount
+		: kMaxSessionsCount;
+	return (count < maxSessions)
 		&& (count == int(_dcIndicesWithFastRequests.size()));
 }
 

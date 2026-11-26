@@ -1,6 +1,6 @@
 /*
 This file is part of Omnigram,
-an advanced fork of Telegram Desktop porting macOS aesthetics.
+an advanced fork of Telegram Desktop.
 
 For license and copyright information please follow this link:
 https://github.com/omnigram-app/omnigram/blob/main/LICENSE
@@ -13,16 +13,11 @@ namespace Omnigram {
 namespace {
 
 constexpr auto kSettingsGroup = "OmnigramSettings";
-constexpr auto kKeyUIMode = "ui_mode";
-constexpr auto kKeyBubbles = "macos_bubbles";
-constexpr auto kKeyAnimations = "macos_animations";
-constexpr auto kKeyInputBar = "macos_input_bar";
-constexpr auto kKeyChatList = "macos_chat_list";
-constexpr auto kKeySidebar = "macos_sidebar";
 constexpr auto kKeyExactTime = "exact_time";
 constexpr auto kKeyShowPeerId = "show_peer_id";
 constexpr auto kKeyNoAds = "no_ads";
 constexpr auto kKeyClientLimitsRemoved = "client_limits_removed";
+constexpr auto kKeyFastDownload = "fast_download";
 
 } // namespace
 
@@ -32,131 +27,12 @@ Settings &Settings::Instance() {
 }
 
 Settings::Settings()
-: _uiMode(UIMode::MacOS)
-, _macOSBubbles(true)
-, _macOSAnimations(true)
-, _macOSInputBar(true)
-, _macOSChatList(true)
-, _macOSSidebar(true)
-, _exactTime(true)
+: _exactTime(true)
 , _showPeerId(true)
 , _noAds(true)
-, _clientLimitsRemoved(true) {
+, _clientLimitsRemoved(true)
+, _fastDownload(true) {
 	readSettings();
-}
-
-UIMode Settings::uiMode() const {
-	return _uiMode.current();
-}
-
-void Settings::setUIMode(UIMode mode) {
-	if (_uiMode.current() == mode) {
-		return;
-	}
-	_uiMode = mode;
-	if (mode != UIMode::Custom) {
-		updateFromPreset(mode);
-	}
-	writeSettings();
-}
-
-rpl::producer<UIMode> Settings::uiModeValue() const {
-	return _uiMode.value();
-}
-
-bool Settings::macOSBubbles() const {
-	return _macOSBubbles.current();
-}
-
-void Settings::setMacOSBubbles(bool enabled) {
-	if (_macOSBubbles.current() == enabled) {
-		return;
-	}
-	_macOSBubbles = enabled;
-	if (_uiMode.current() != UIMode::Custom) {
-		_uiMode = UIMode::Custom;
-	}
-	writeSettings();
-}
-
-rpl::producer<bool> Settings::macOSBubblesValue() const {
-	return _macOSBubbles.value();
-}
-
-bool Settings::macOSAnimations() const {
-	return _macOSAnimations.current();
-}
-
-void Settings::setMacOSAnimations(bool enabled) {
-	if (_macOSAnimations.current() == enabled) {
-		return;
-	}
-	_macOSAnimations = enabled;
-	if (_uiMode.current() != UIMode::Custom) {
-		_uiMode = UIMode::Custom;
-	}
-	writeSettings();
-}
-
-rpl::producer<bool> Settings::macOSAnimationsValue() const {
-	return _macOSAnimations.value();
-}
-
-bool Settings::macOSInputBar() const {
-	return _macOSInputBar.current();
-}
-
-void Settings::setMacOSInputBar(bool enabled) {
-	if (_macOSInputBar.current() == enabled) {
-		return;
-	}
-	_macOSInputBar = enabled;
-	if (_uiMode.current() != UIMode::Custom) {
-		_uiMode = UIMode::Custom;
-	}
-	writeSettings();
-}
-
-rpl::producer<bool> Settings::macOSInputBarValue() const {
-	return _macOSInputBar.value();
-}
-
-bool Settings::macOSChatList() const {
-	return _macOSChatList.current();
-}
-
-void Settings::setMacOSChatList(bool enabled) {
-	if (_macOSChatList.current() == enabled) {
-		return;
-	}
-	_macOSChatList = enabled;
-	if (_uiMode.current() != UIMode::Custom) {
-		_uiMode = UIMode::Custom;
-	}
-	writeSettings();
-}
-
-rpl::producer<bool> Settings::macOSChatListValue() const {
-	return _macOSChatList.value();
-}
-
-bool Settings::macOSSidebar() const {
-	return _macOSSidebar.current();
-}
-
-void Settings::setMacOSSidebar(bool enabled) {
-	if (_macOSSidebar.current() == enabled) {
-		return;
-	}
-	_macOSSidebar = enabled;
-	if (_uiMode.current() != UIMode::Custom) {
-		_uiMode = UIMode::Custom;
-	}
-	writeSettings();
-}
-
-rpl::producer<bool> Settings::macOSSidebarValue() const {
-	return _macOSSidebar.value();
 }
 
 bool Settings::exactTime() const {
@@ -223,70 +99,51 @@ rpl::producer<bool> Settings::clientLimitsRemovedValue() const {
 	return _clientLimitsRemoved.value();
 }
 
-void Settings::updateFromPreset(UIMode mode) {
-	const auto enableAll = (mode == UIMode::MacOS);
-	_macOSBubbles = enableAll;
-	_macOSAnimations = enableAll;
-	_macOSInputBar = enableAll;
-	_macOSChatList = enableAll;
-	_macOSSidebar = enableAll;
+bool Settings::fastDownload() const {
+	return _fastDownload.current();
+}
+
+void Settings::setFastDownload(bool enabled) {
+	if (_fastDownload.current() == enabled) {
+		return;
+	}
+	_fastDownload = enabled;
+	writeSettings();
+}
+
+rpl::producer<bool> Settings::fastDownloadValue() const {
+	return _fastDownload.value();
 }
 
 void Settings::resetToDefaults() {
-	_uiMode = UIMode::MacOS;
-	updateFromPreset(UIMode::MacOS);
 	_exactTime = true;
 	_showPeerId = true;
 	_noAds = true;
 	_clientLimitsRemoved = true;
+	_fastDownload = true;
 	writeSettings();
 }
 
 void Settings::readSettings() {
-	QSettings settings;
-	settings.beginGroup(kSettingsGroup);
-
-	const auto modeInt = settings.value(
-		kKeyUIMode,
-		static_cast<int>(UIMode::MacOS)).toInt();
-	const auto mode = (modeInt >= 0 && modeInt <= 2)
-		? static_cast<UIMode>(modeInt)
-		: UIMode::MacOS;
-
-	_uiMode = mode;
-	if (mode == UIMode::Custom) {
-		_macOSBubbles = settings.value(kKeyBubbles, true).toBool();
-		_macOSAnimations = settings.value(kKeyAnimations, true).toBool();
-		_macOSInputBar = settings.value(kKeyInputBar, true).toBool();
-		_macOSChatList = settings.value(kKeyChatList, true).toBool();
-		_macOSSidebar = settings.value(kKeySidebar, true).toBool();
-	} else {
-		updateFromPreset(mode);
-	}
-	_exactTime = settings.value(kKeyExactTime, true).toBool();
-	_showPeerId = settings.value(kKeyShowPeerId, true).toBool();
-	_noAds = settings.value(kKeyNoAds, true).toBool();
-	_clientLimitsRemoved = settings.value(kKeyClientLimitsRemoved, true).toBool();
-
-	settings.endGroup();
+	QSettings s;
+	s.beginGroup(kSettingsGroup);
+	_exactTime = s.value(kKeyExactTime, true).toBool();
+	_showPeerId = s.value(kKeyShowPeerId, true).toBool();
+	_noAds = s.value(kKeyNoAds, true).toBool();
+	_clientLimitsRemoved = s.value(kKeyClientLimitsRemoved, true).toBool();
+	_fastDownload = s.value(kKeyFastDownload, true).toBool();
+	s.endGroup();
 }
 
 void Settings::writeSettings() {
-	QSettings settings;
-	settings.beginGroup(kSettingsGroup);
-
-	settings.setValue(kKeyUIMode, static_cast<int>(_uiMode.current()));
-	settings.setValue(kKeyBubbles, _macOSBubbles.current());
-	settings.setValue(kKeyAnimations, _macOSAnimations.current());
-	settings.setValue(kKeyInputBar, _macOSInputBar.current());
-	settings.setValue(kKeyChatList, _macOSChatList.current());
-	settings.setValue(kKeySidebar, _macOSSidebar.current());
-	settings.setValue(kKeyExactTime, _exactTime.current());
-	settings.setValue(kKeyShowPeerId, _showPeerId.current());
-	settings.setValue(kKeyNoAds, _noAds.current());
-	settings.setValue(kKeyClientLimitsRemoved, _clientLimitsRemoved.current());
-
-	settings.endGroup();
+	QSettings s;
+	s.beginGroup(kSettingsGroup);
+	s.setValue(kKeyExactTime, _exactTime.current());
+	s.setValue(kKeyShowPeerId, _showPeerId.current());
+	s.setValue(kKeyNoAds, _noAds.current());
+	s.setValue(kKeyClientLimitsRemoved, _clientLimitsRemoved.current());
+	s.setValue(kKeyFastDownload, _fastDownload.current());
+	s.endGroup();
 }
 
 } // namespace Omnigram
