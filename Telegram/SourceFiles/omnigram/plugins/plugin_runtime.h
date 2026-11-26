@@ -26,8 +26,9 @@ public:
 	[[nodiscard]] bool evaluateFile(const QString &filePath, QString &errorOut);
 	void invokeButtonCallback(const QString &key);
 
-private:
 	struct Impl;
+
+private:
 	std::unique_ptr<Impl> _impl;
 };
 

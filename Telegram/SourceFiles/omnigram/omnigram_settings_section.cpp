@@ -11,6 +11,7 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #include "omnigram/plugins/plugin_manager.h"
 #include "omnigram/plugins/plugin_settings_ui.h"
 #include "chat_helpers/tabbed_panel.h"
+#include "core/application.h"
 #include "core/file_utilities.h"
 #include "data/data_peer.h"
 #include "data/data_session.h"
@@ -241,7 +242,7 @@ void SetupStreamerTargetBlock(
 
 	pickAvatarBtn->setClickedCallback([=, &streamer, &rule] {
 		FileDialog::GetOpenPath(
-			controller->widget().get(),
+			Core::App().getFileDialogParent(),
 			u"Choose Custom Avatar Image"_q,
 			FileDialog::ImagesFilter(),
 			[=, &streamer, &rule](FileDialog::OpenResult &&result) {
