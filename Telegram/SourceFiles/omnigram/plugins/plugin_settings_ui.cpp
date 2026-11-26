@@ -250,6 +250,7 @@ void BuildPluginSettingsUI(
 					st::settingsButton));
 			btn->setClickedCallback([=] {
 				plugin->setSettingValue(schema.key, QVariant(true));
+				plugin->invokeButton(schema.key);
 			});
 		}
 

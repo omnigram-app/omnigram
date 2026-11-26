@@ -18,6 +18,8 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 
 namespace Omnigram::Plugins {
 
+class PluginRuntime;
+
 struct PluginSettingSchema {
 	QString key;
 	QString type; // "boolean", "string", "select", "button"
@@ -53,6 +55,7 @@ public:
 	[[nodiscard]] const PluginManifest &manifest() const { return _manifest; }
 	[[nodiscard]] const QString &directory() const { return _directory; }
 	[[nodiscard]] bool isRunning() const { return _running; }
+	[[nodiscard]] const QString &lastError() const { return _lastError; }
 	[[nodiscard]] bool hasSettings() const {
 		return !_manifest.settings.empty();
 	}
@@ -61,12 +64,19 @@ public:
 	void setSettingValue(const QString &key, const QVariant &value);
 	void resetSettings();
 
+	void setDynamicSettings(
+		bool standaloneTab,
+		std::vector<PluginSettingSchema> items);
+	void invokeButton(const QString &key);
+
 	bool load();
 	void unload();
 
 private:
 	PluginManifest _manifest;
 	QString _directory;
+	QString _lastError;
+	std::unique_ptr<PluginRuntime> _runtime;
 	bool _running = false;
 };
 

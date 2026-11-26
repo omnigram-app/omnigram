@@ -31,6 +31,7 @@ include(cmake/lib_tgcalls.cmake)
 include(cmake/lib_prisma.cmake)
 include(cmake/lib_fido2.cmake)
 include(cmake/lib_zxcvbn.cmake)
+include(cmake/lib_quickjs.cmake)
 include(cmake/td_export.cmake)
 include(cmake/td_gram.cmake)
 include(cmake/td_iv.cmake)
@@ -96,6 +97,7 @@ PRIVATE
     desktop-app::lib_webview
     desktop-app::lib_ffmpeg
     desktop-app::lib_stripe
+    desktop-app::lib_quickjs
     desktop-app::external_ada
     desktop-app::external_zlib
     desktop-app::external_minizip
@@ -132,6 +134,8 @@ PRIVATE
     omnigram/plugins/plugin_manager.h
     omnigram/plugins/plugin_events.cpp
     omnigram/plugins/plugin_events.h
+    omnigram/plugins/plugin_runtime.cpp
+    omnigram/plugins/plugin_runtime.h
     omnigram/plugins/plugin_settings_ui.cpp
     omnigram/plugins/plugin_settings_ui.h
 

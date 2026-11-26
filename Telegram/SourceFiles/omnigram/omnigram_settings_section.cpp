@@ -26,6 +26,7 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #include "ui/widgets/fields/input_field.h"
 #include "ui/wrap/slide_wrap.h"
 #include "ui/wrap/vertical_layout.h"
+#include "ui/toast/toast.h"
 #include "window/main_window.h"
 #include "window/window_session_controller.h"
 #include "lang/lang_keys.h"
@@ -426,6 +427,10 @@ void SetupOmnigramSettings(
 
 	reloadPluginsBtn->setClickedCallback([&] {
 		pluginManager.discoverPlugins();
+		Ui::Toast::Show(
+			u"Plugins reloaded ("_q
+				+ QString::number(pluginManager.plugins().size())
+				+ u" found)"_q);
 	});
 
 	// List discovered plugins with toggles and gear settings button
