@@ -1,6 +1,6 @@
 /*
 This file is part of Omnigram,
-an advanced fork of Telegram Desktop porting macOS aesthetics.
+an advanced fork of Telegram Desktop.
 
 For license and copyright information please follow this link:
 https://github.com/omnigram-app/omnigram/blob/main/LICENSE
@@ -25,6 +25,8 @@ public:
 		return _plugins;
 	}
 
+	[[nodiscard]] Plugin *findPlugin(const QString &id) const;
+
 	[[nodiscard]] QString pluginsDirectory() const {
 		return _pluginsDirectory;
 	}
@@ -39,6 +41,7 @@ private:
 	PluginManager(const PluginManager &) = delete;
 	PluginManager &operator=(const PluginManager &) = delete;
 
+	bool _initialized = false;
 	QString _pluginsDirectory;
 	std::vector<std::unique_ptr<Plugin>> _plugins;
 };

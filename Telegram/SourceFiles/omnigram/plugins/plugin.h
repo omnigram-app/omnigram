@@ -1,6 +1,6 @@
 /*
 This file is part of Omnigram,
-an advanced fork of Telegram Desktop porting macOS aesthetics.
+an advanced fork of Telegram Desktop.
 
 For license and copyright information please follow this link:
 https://github.com/omnigram-app/omnigram/blob/main/LICENSE
@@ -8,12 +8,29 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #pragma once
 
 #include "base/basic_types.h"
-#include <QtCore/QString>
 #include <QtCore/QJsonObject>
-#include <vector>
+#include <QtCore/QJsonValue>
+#include <QtCore/QString>
+#include <QtCore/QStringList>
+#include <QtCore/QVariant>
 #include <memory>
+#include <vector>
 
 namespace Omnigram::Plugins {
+
+struct PluginSettingSchema {
+	QString key;
+	QString type; // "boolean", "string", "select", "button"
+	QString label;
+	QString description;
+	QJsonValue defaultValue;
+	QStringList options; // for "select"
+};
+
+struct PluginTextRule {
+	QString from;
+	QString to;
+};
 
 struct PluginManifest {
 	QString id;
@@ -23,6 +40,9 @@ struct PluginManifest {
 	QString author;
 	QString entryPoint; // e.g. "index.ts" or "index.js"
 	bool enabled = true;
+	bool standaloneSettingsTab = false;
+	std::vector<PluginSettingSchema> settings;
+	std::vector<PluginTextRule> beforeSendRules;
 };
 
 class Plugin {
@@ -33,6 +53,13 @@ public:
 	[[nodiscard]] const PluginManifest &manifest() const { return _manifest; }
 	[[nodiscard]] const QString &directory() const { return _directory; }
 	[[nodiscard]] bool isRunning() const { return _running; }
+	[[nodiscard]] bool hasSettings() const {
+		return !_manifest.settings.empty();
+	}
+
+	[[nodiscard]] QVariant settingValue(const QString &key) const;
+	void setSettingValue(const QString &key, const QVariant &value);
+	void resetSettings();
 
 	bool load();
 	void unload();

@@ -42,6 +42,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "api/api_premium.h"
 #include "api/api_user_names.h"
 #include "api/api_websites.h"
+#include "omnigram/plugins/plugin_events.h"
 #include "data/business/data_shortcut_messages.h"
 #include "data/components/credits.h"
 #include "data/components/ephemeral_messages.h"
@@ -4781,11 +4782,13 @@ void ApiWrap::sendMessage(
 	if (Api::SendDice(message)) {
 		return;
 	}
-	local().saveRecentSentHashtags(textWithTags.text);
+	const auto processedText = Omnigram::Plugins::PluginEvents::Instance().processBeforeSend(
+		textWithTags.text);
+	local().saveRecentSentHashtags(processedText);
 
 	auto sending = TextWithEntities();
 	auto left = TextWithEntities {
-		textWithTags.text,
+		processedText,
 		TextUtilities::ConvertTextTagsToEntities(textWithTags.tags)
 	};
 	auto prepareFlags = Ui::ItemTextOptions(

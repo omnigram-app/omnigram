@@ -43,6 +43,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_star_gift.h"
 #include "data/data_emoji_statuses.h"
 #include "data/data_folder.h"
+#include "omnigram/plugins/plugin_events.h"
 #include "data/data_forum.h"
 #include "data/data_forum_topic.h"
 #include "data/data_photo.h"
@@ -696,7 +697,18 @@ not_null<HistoryItem*> History::addNewMessage(
 	if (newMessage && item->isHistoryEntry()) {
 		applyMessageChanges(item, message);
 	}
-	return addNewItem(item, newMessage);
+	const auto result = addNewItem(item, newMessage);
+	if (newMessage) {
+		Omnigram::Plugins::PluginMessageEvent event;
+		event.id = result->id.bare;
+		event.peerId = peer->id.value;
+		event.senderId = result->from()->id.value;
+		event.text = result->originalText().text;
+		event.date = result->date();
+		event.isOutgoing = result->out();
+		Omnigram::Plugins::PluginEvents::Instance().dispatchMessage(event);
+	}
+	return result;
 }
 
 not_null<HistoryItem*> History::insertItem(

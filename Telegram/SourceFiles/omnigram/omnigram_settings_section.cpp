@@ -9,10 +9,13 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #include "omnigram/omnigram_settings.h"
 #include "omnigram/omnigram_streamer_mode.h"
 #include "omnigram/plugins/plugin_manager.h"
+#include "omnigram/plugins/plugin_settings_ui.h"
 #include "chat_helpers/tabbed_panel.h"
 #include "core/file_utilities.h"
 #include "data/data_peer.h"
 #include "data/data_session.h"
+#include "history/history.h"
+#include "main/main_session.h"
 #include "boxes/peer_list_box.h"
 #include "boxes/peer_list_controllers.h"
 #include "settings/settings_common.h"
@@ -23,6 +26,7 @@ https://github.com/omnigram-app/omnigram/blob/main/LICENSE
 #include "ui/widgets/fields/input_field.h"
 #include "ui/wrap/slide_wrap.h"
 #include "ui/wrap/vertical_layout.h"
+#include "window/main_window.h"
 #include "window/window_session_controller.h"
 #include "lang/lang_keys.h"
 #include "styles/style_boxes.h"
@@ -62,13 +66,14 @@ void AddInputFieldRow(
 		object_ptr<Ui::InputField>(
 			container,
 			st::defaultInputField,
-			placeholder,
+			Ui::InputField::Mode::SingleLine,
+			rpl::single(placeholder),
 			initial),
 		st::settingsSendTypePadding);
 
-	QObject::connect(field, &Ui::InputField::changed, [=] {
+	field->changes() | rpl::on_next([=] {
 		onChange(field->getLastText());
-	});
+	}, field->lifetime());
 }
 
 void OpenPeerSelector(
@@ -82,15 +87,24 @@ void OpenPeerSelector(
 			not_null<Main::Session*> session,
 			const QSet<uint64> &selected)
 		: ChatsListBoxController(session)
+		, _session(session)
 		, _selected(selected) {
+		}
+
+		Main::Session &session() const override {
+			return *_session;
 		}
 
 		void prepareViewHook() override {
 			delegate()->peerListSetSearchMode(PeerListSearchMode::Enabled);
+			auto peers = std::vector<not_null<PeerData*>>();
 			for (const auto id : _selected) {
-				if (const auto peer = session().data().peer(PeerId(id))) {
-					delegate()->peerListAddSelectedPeer(peer);
+				if (const auto peer = session().data().peerLoaded(PeerId(id))) {
+					peers.push_back(peer);
 				}
+			}
+			if (!peers.empty()) {
+				delegate()->peerListAddSelectedPeers(std::move(peers));
 			}
 		}
 
@@ -98,19 +112,25 @@ void OpenPeerSelector(
 			delegate()->peerListSetRowChecked(row, !row->checked());
 		}
 
+	protected:
+		std::unique_ptr<Row> createRow(not_null<History*> history) override {
+			return std::make_unique<Row>(history);
+		}
+
 	private:
+		not_null<Main::Session*> _session;
 		QSet<uint64> _selected;
 	};
 
 	auto listController = std::make_unique<CustomChatsController>(
 		&controller->session(),
 		initialSelected);
-	auto initBox = [=, raw = listController.get()](not_null<PeerListBox*> box) {
+	auto initBox = [=](not_null<PeerListBox*> box) {
 		box->setTitle(rpl::single(title));
 		box->addButton(tr::lng_settings_save(), [=] {
 			const auto peers = box->collectSelectedRows();
 			QSet<uint64> result;
-			for (const auto peer : peers) {
+			for (const auto &peer : peers) {
 				result.insert(peer->id.value);
 			}
 			onSave(result);
@@ -220,7 +240,7 @@ void SetupStreamerTargetBlock(
 
 	pickAvatarBtn->setClickedCallback([=, &streamer, &rule] {
 		FileDialog::GetOpenPath(
-			controller->widget(),
+			controller->widget().get(),
 			u"Choose Custom Avatar Image"_q,
 			FileDialog::ImagesFilter(),
 			[=, &streamer, &rule](FileDialog::OpenResult &&result) {
@@ -408,24 +428,64 @@ void SetupOmnigramSettings(
 		pluginManager.discoverPlugins();
 	});
 
-	// List discovered plugins with toggles
+	// List discovered plugins with toggles and gear settings button
 	const auto &plugins = pluginManager.plugins();
 	if (plugins.empty()) {
 		container->add(
 			object_ptr<Ui::FlatLabel>(
 				container,
 				u"No plugins installed yet. Put .ts/.js plugin folders into the plugins directory."_q,
-				st::settingsScaleLabel));
+				st::settingsScaleLabel),
+			st::settingsSendTypePadding);
 	} else {
 		for (const auto &plugin : plugins) {
 			const auto &m = plugin->manifest();
-			AddToggle(
-				container,
+			const auto rawPlugin = plugin.get();
+			const auto hasGear = rawPlugin->hasSettings() || m.standaloneSettingsTab;
+			if (!hasGear) {
+				AddToggle(
+					container,
+					m.name + u" (v"_q + m.version + u")"_q,
+					plugin->isRunning(),
+					[&pluginManager, id = m.id](bool checked) {
+						pluginManager.setPluginEnabled(id, checked);
+					});
+				continue;
+			}
+			const auto row = container->add(
+				object_ptr<Ui::RpWidget>(container));
+			const auto check = Ui::CreateChild<Ui::Checkbox>(
+				row,
 				m.name + u" (v"_q + m.version + u")"_q,
 				plugin->isRunning(),
-				[&pluginManager, id = m.id](bool checked) {
-					pluginManager.setPluginEnabled(id, checked);
-				});
+				st::settingsCheckbox);
+			check->checkedChanges() | rpl::on_next([&pluginManager, id = m.id](bool checked) {
+				pluginManager.setPluginEnabled(id, checked);
+			}, check->lifetime());
+
+			const auto gear = Ui::CreateChild<Ui::IconButton>(
+				row,
+				st::sessionTerminate);
+			gear->setIconOverride(&st::menuIconSettings, &st::menuIconSettings);
+			gear->setClickedCallback([=] {
+				Plugins::OpenPluginSettings(controller, rawPlugin);
+			});
+
+			row->sizeValue() | rpl::on_next([=](QSize size) {
+				const auto pad = st::settingsSendTypePadding;
+				const auto gearW = gear->width();
+				const auto checkMaxW = std::max(
+					0,
+					size.width() - pad.left() - pad.right() - gearW - st::settingsCheckboxesSkip);
+				check->resizeToWidth(checkMaxW);
+				check->moveToLeft(pad.left(), pad.top());
+				gear->moveToRight(pad.right(), (size.height() - gear->height()) / 2);
+			}, row->lifetime());
+			row->resize(
+				row->width(),
+				std::max(check->height(), gear->height())
+					+ st::settingsSendTypePadding.top()
+					+ st::settingsSendTypePadding.bottom());
 		}
 	}
 

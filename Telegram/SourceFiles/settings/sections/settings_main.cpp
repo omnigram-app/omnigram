@@ -39,6 +39,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_cloud_manager.h"
 #include "lang/lang_instance.h"
 #include "omnigram/omnigram_settings_section.h"
+#include "omnigram/plugins/plugin_manager.h"
+#include "omnigram/plugins/plugin_settings_ui.h"
 #include "lang/lang_keys.h"
 #include "lottie/lottie_icon.h"
 #include "menu/menu_checked_action.h"
@@ -406,6 +408,20 @@ void BuildSectionButtons(SectionBuilder &builder) {
 		.icon = { &st::menuIconChatBubble },
 		.keywords = { u"omnigram"_q, u"plugins"_q, u"features"_q, u"seconds"_q },
 	});
+
+	auto &pluginManager = Omnigram::Plugins::PluginManager::Instance();
+	pluginManager.init();
+	for (const auto &plugin : pluginManager.plugins()) {
+		const auto &m = plugin->manifest();
+		if (m.standaloneSettingsTab && plugin->isRunning()) {
+			builder.addSectionButton({
+				.title = rpl::single(m.name),
+				.targetSection = Omnigram::Plugins::PluginSectionId(m.id),
+				.icon = { &st::menuIconSettings },
+				.keywords = { u"plugin"_q, m.id, m.name },
+			});
+		}
+	}
 
 	{ // Folders
 		const auto preload = [=] {
